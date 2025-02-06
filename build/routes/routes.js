@@ -1,0 +1,13 @@
+import { Router } from "express";
+import authRoute from "./v1/authRoute.js";
+import categoryRoute from "./v1/categoryRoute.js";
+import toolRoute from "./v1/toolRoute.js";
+import customerRoute from "./v1/customerRoute.js";
+import rentalRoute from "./v1/rentalRoute.js";
+const router = Router();
+router.use("/v1/auth", authRoute);
+router.use("/v1/categories", categoryRoute);
+router.use("/v1/tools", toolRoute);
+router.use("/v1/customers", customerRoute);
+router.use("/v1/rentals", rentalRoute);
+export default router;

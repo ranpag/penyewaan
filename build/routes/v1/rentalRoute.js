@@ -1,0 +1,14 @@
+import { Router } from "express";
+import middlewareHandler from "../../src/middlewares/_middleware.js";
+import control from "../../src/utils/control.js";
+import sanitizeAndValidate from "../../src/utils/validate.js";
+import rentalController from "../../src/controllers/rentalController.js";
+import rentalValidation from "../../src/validations/rentalValidation.js";
+const router = Router();
+router.get("/", control(rentalController.index));
+router.get("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.selectedRental), control(rentalController.selected));
+router.post("/", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.postRental), control(rentalController.create));
+router.put("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.putRental), control(rentalController.update));
+router.patch("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.patchRental), control(rentalController.update));
+router.delete("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.destroyRental), control(rentalController.destroy));
+export default router;

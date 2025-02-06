@@ -1,0 +1,23 @@
+import { Router } from "express";
+import middlewareHandler from "../../src/middlewares/_middleware.js";
+import control from "../../src/utils/control.js";
+import sanitizeAndValidate from "../../src/utils/validate.js";
+import customerController from "../../src/controllers/customerController.js";
+import customerValidation from "../../src/validations/customerValidation.js";
+import customerDataValidation from "../../src/validations/customerDataValidation.js";
+import { loadFileInMemory, uploadFileToS3 } from "../../src/services/fileService.js";
+const router = Router();
+router.get("/", control(customerController.index));
+router.get("/:customerId", middlewareHandler("auth"), sanitizeAndValidate(customerValidation.selectedCustomer), control(customerController.selected));
+router.post("/", middlewareHandler("auth"), loadFileInMemory("pelanggan_data_file", customerValidation.customerDataValidation), sanitizeAndValidate(customerValidation.createCustomer), uploadFileToS3("customerData", "pelanggan_data_file"), control(customerController.create));
+router.put("/:customerId", middlewareHandler("auth"), loadFileInMemory("pelanggan_data_file", customerValidation.customerDataValidation), sanitizeAndValidate(customerValidation.putCustomer), uploadFileToS3("customerData", "pelanggan_data_file"), control(customerController.update));
+router.patch("/:customerId", middlewareHandler("auth"), loadFileInMemory("pelanggan_data_file"), sanitizeAndValidate(customerValidation.patchCustomer), uploadFileToS3("customerData", "pelanggan_data_file"), control(customerController.update));
+router.delete("/data/:customerId", middlewareHandler("auth"), sanitizeAndValidate(customerValidation.destroyCustomer), control(customerController.destroy));
+// Customer Data Only
+router.get("/data/", control(customerController.index));
+router.get("/data/:customerId", middlewareHandler("auth"), sanitizeAndValidate(customerDataValidation.selectedCustomerData), control(customerController.selected));
+router.post("/data/", middlewareHandler("auth"), loadFileInMemory("pelanggan_data_file", customerDataValidation.customerDataValidation), sanitizeAndValidate(customerDataValidation.createCustomerData), uploadFileToS3("customerData", "pelanggan_data_file"), control(customerController.create));
+router.put("/data/:customerId", middlewareHandler("auth"), loadFileInMemory("pelanggan_data_file", customerDataValidation.customerDataValidation), sanitizeAndValidate(customerDataValidation.putCustomerData), uploadFileToS3("customerData", "pelanggan_data_file"), control(customerController.update));
+router.patch("/data/:customerId", middlewareHandler("auth"), loadFileInMemory("pelanggan_data_file"), sanitizeAndValidate(customerDataValidation.patchCustomerData), uploadFileToS3("customerData", "pelanggan_data_file"), control(customerController.update));
+router.delete("/data/:customerId", middlewareHandler("auth"), sanitizeAndValidate(customerDataValidation.destroyCustomerData), control(customerController.destroy));
+export default router;

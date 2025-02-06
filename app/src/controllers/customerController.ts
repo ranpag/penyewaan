@@ -1,0 +1,220 @@
+import { Request, Response } from "express";
+import prisma from "~/src/database/prisma";
+import { logger } from "@utils/logger";
+import { errorAPI } from "@utils/errorAPI";
+import { deleteFile } from "@services/fileService";
+import { checkNaN } from "../utils/checkNaN";
+import { Prisma } from "@prisma/client";
+
+const index = async (req: Request, res: Response) => {
+    try {
+        const customers = await prisma.pelanggan.findMany({
+            include: {
+                pelanggan_data: true,
+                penyewaan: true
+            },
+            take: 10,
+            skip: parseInt(req.query.page as string) * 10 || 0
+        });
+
+        const totalCustomers = await prisma.pelanggan.count();
+
+        return res.status(200).json({
+            success: true,
+            message: "Success mendapatkan semua pelanggan",
+            data: customers,
+            pagination: {
+                totalItem: customers.length,
+                totalData: totalCustomers,
+                totalPage: Math.floor(totalCustomers / customers.length)
+            }
+        });
+    } catch (err) {
+        logger.error("Error during fetching all customers" + err);
+        throw err;
+    }
+};
+
+const selected = async (req: Request, res: Response) => {
+    const { customerId } = req.params;
+
+    try {
+        const resultNumberParams = checkNaN({ customerId });
+
+        const customer = await prisma.pelanggan.findUnique({
+            where: {
+                pelanggan_id: resultNumberParams.customerId
+            },
+            include: {
+                pelanggan_data: true,
+                penyewaan: true
+            }
+        });
+
+        if (!customer) throw new errorAPI("Pelanggan tidak ditemukan", 404);
+
+        return res.status(200).json({
+            success: true,
+            message: "Success mendapatkan pelanggan",
+            data: customer
+        });
+    } catch (err) {
+        logger.error("Error during fetching customer by ID" + err);
+        throw err;
+    }
+};
+
+const create = async (req: Request, res: Response) => {
+    const { pelanggan_data_jenis, pelanggan_data_file, ...onlyCustomer } = req.body;
+
+    try {
+        const customer = await prisma.pelanggan.create({
+            data: onlyCustomer
+        });
+
+        if (pelanggan_data_jenis && pelanggan_data_file) {
+            await prisma.pelanggan_data.create({
+                data: {
+                    pelanggan_data_pelanggan_id: customer.pelanggan_id,
+                    pelanggan_data_jenis: pelanggan_data_jenis,
+                    pelanggan_data_file: pelanggan_data_file
+                }
+            });
+
+            const updatedCustomer = await prisma.pelanggan.findUnique({
+                where: { pelanggan_id: customer.pelanggan_id },
+                include: { pelanggan_data: true }
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: "Success membuat pelanggan baru",
+                data: updatedCustomer
+            });
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: "Success membuat pelanggan baru",
+            data: customer
+        });
+    } catch (err) {
+        logger.error("Error during creating new customer" + err);
+        throw err;
+    }
+};
+
+const update = async (req: Request, res: Response) => {
+    const { pelanggan_data_jenis, pelanggan_data_file, ...onlyCustomer } = req.body;
+    const { customerId } = req.params;
+
+    try {
+        const resultNumberParams = checkNaN({ customerId });
+
+        const existingCustomer = await prisma.pelanggan.update({
+            data: onlyCustomer,
+            where: { pelanggan_id: resultNumberParams.customerId },
+            include: { pelanggan_data: true }
+        });
+
+        if (!existingCustomer) throw new errorAPI("Pelanggan tidak ditemukan", 404);
+
+        if ((pelanggan_data_jenis || pelanggan_data_file) && existingCustomer.pelanggan_data) {
+            if (!existingCustomer.pelanggan_data && !(pelanggan_data_file || pelanggan_data_jenis)) {
+                throw new errorAPI("Validation error", 400, ["Pelanggan data jenis dan Pelanggan data file harus ada"]);
+            }
+
+            const customerData: Record<string, string> = { pelanggan_data_jenis, pelanggan_data_file };
+
+            Object.entries(customerData).forEach(([key, value]) => {
+                if (!value) {
+                    delete customerData[key];
+                }
+            });
+
+            const updatedCustomerData = await prisma.pelanggan_data.update({
+                data: {
+                    ...customerData
+                },
+                where: { pelanggan_data_pelanggan_id: existingCustomer.pelanggan_id }
+            });
+
+            if (pelanggan_data_file && existingCustomer.pelanggan_data?.pelanggan_data_file) {
+                deleteFile("customerData", existingCustomer.pelanggan_data?.pelanggan_data_file.split("/").at(-1) || "a.jpg");
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Success mengupdate customer",
+                data: {
+                    ...existingCustomer,
+                    pelanggan_data: updatedCustomerData
+                }
+            });
+        }
+
+        if (pelanggan_data_jenis && pelanggan_data_file && !existingCustomer.pelanggan_data) {
+            const newCustomerData = await prisma.pelanggan_data.create({
+                data: {
+                    pelanggan_data_jenis,
+                    pelanggan_data_file,
+                    pelanggan_data_pelanggan_id: existingCustomer.pelanggan_id
+                }
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: "Success mengupdate customer",
+                data: {
+                    ...existingCustomer,
+                    pelanggan_data: newCustomerData
+                }
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Success mengupdate customer",
+            data: existingCustomer
+        });
+    } catch (err) {
+        logger.error("Error during updating customer" + err);
+
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            if (err.code === "P2025") {
+                throw new errorAPI("Pelanggan tidak ditemukan", 404);
+            }
+        }
+
+        throw err;
+    }
+};
+
+const destroy = async (req: Request, res: Response) => {
+    const { customerId } = req.params;
+
+    try {
+        const resultNumberParams = checkNaN({ customerId });
+
+        const customerData = await prisma.pelanggan_data.findUnique({
+            where: {
+                pelanggan_data_pelanggan_id: resultNumberParams.customerId
+            }
+        });
+
+        if (customerData && customerData.pelanggan_data_file) {
+            deleteFile("customerData", customerData.pelanggan_data_file.split("/").at(-1) || "");
+        }
+
+        await prisma.pelanggan.delete({
+            where: { pelanggan_id: resultNumberParams.customerId }
+        });
+
+        return res.status(204).send();
+    } catch (err) {
+        logger.error("Error during deleting customer" + err);
+        throw err;
+    }
+};
+
+export default { index, selected, create, update, destroy };

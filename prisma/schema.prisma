@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum pelanggan_data_jenis {
+  KTP
+  SIM
+}
+
+enum status_pembayaran {
+  LUNAS
+  BELUM_DIBAYAR
+  DP
+}
+
+enum status_kembali {
+  SUDAH_KEMBALI
+  BELUM_KEMBALI
+}
+
+model pelanggan {
+  pelanggan_id   Int    @id @default(autoincrement())
+  pelanggan_nama String @db.VarChar(150)
+  pelanggan_alamat String @db.VarChar(200)
+  pelanggan_notelp String @db.Char(13) @unique
+  pelanggan_email String @db.VarChar(100) @unique
+  pelanggan_data pelanggan_data?
+  penyewaan penyewaan[]
+}
+
+model pelanggan_data {
+  pelanggan_data_id    Int    @id @default(autoincrement())
+  pelanggan_data_pelanggan_id Int @unique
+  pelanggan_data_jenis pelanggan_data_jenis
+  pelanggan_data_file  String @db.VarChar(255) @unique
+  pelanggan pelanggan @relation(fields: [pelanggan_data_pelanggan_id], references: [pelanggan_id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model admin {
+  admin_id       Int    @id @default(autoincrement())
+  admin_username String @db.VarChar(50) @unique
+  admin_password String @db.VarChar(255)
+}
+
+model penyewaan {
+  penyewaan_id            Int    @id @default(autoincrement())
+  penyewaan_pelanggan_id  Int
+  penyewaan_tglsewa       DateTime
+  penyewaan_tglkembali    DateTime
+  penyewaan_sttspembayaran status_pembayaran @default(BELUM_DIBAYAR)
+  penyewaan_sttskembali   status_kembali @default(BELUM_KEMBALI)
+  penyewaan_totalharga    Int
+  pelanggan pelanggan @relation(fields: [penyewaan_pelanggan_id], references: [pelanggan_id], onDelete: Cascade, onUpdate: Cascade)
+  penyewaan_detail penyewaan_detail[]
+}
+
+model penyewaan_detail {
+  penyewaan_detail_id    Int @id @default(autoincrement())
+  penyewaan_detail_penyewaan_id Int
+  penyewaan_detail_alat_id Int
+  penyewaan_detail_jumlah Int
+  penyewaan_detail_subharga Int
+  penyewaan penyewaan @relation(fields: [penyewaan_detail_penyewaan_id], references: [penyewaan_id], onDelete: Cascade, onUpdate: Cascade)
+  alat alat @relation(fields: [penyewaan_detail_alat_id], references: [alat_id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model kategori {
+  kategori_id   Int    @id @default(autoincrement())
+  kategori_nama String @db.VarChar(100) @unique
+  alat alat[]
+}
+
+model alat {
+  alat_id       Int    @id @default(autoincrement())
+  alat_kategori_id Int
+  alat_nama     String @db.VarChar(150)
+  alat_deskripsi String @db.VarChar(255)
+  alat_hargaperhari Int
+  alat_stok     Int
+  kategori kategori @relation(fields: [alat_kategori_id], references: [kategori_id], onDelete: Cascade, onUpdate: Cascade)
+  penyewaan_detail penyewaan_detail[]
+}
+
