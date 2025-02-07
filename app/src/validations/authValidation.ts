@@ -28,7 +28,7 @@ const signup = {
             admin_username: Joi.string().trim().max(50).required().external(uniqueUsername).messages({
                 "string.base": "Admin username admin harus berupa teks",
                 "string.empty": "Admin username admin tidak boleh kosong",
-                "string.max": "Admin username admin tidak boleh lebih dari 50 karakter",
+                "string.max": "Admin username admin tidak boleh lebih dari 50 kaAdmin username admin tidak boleh lebih dari 50 karakterrakter",
                 "any.required": "Admin username admin wajib diisi"
             }),
             admin_password: Joi.string()
@@ -64,10 +64,9 @@ const signup = {
 const signin = {
     body: Joi.object()
         .keys({
-            admin_username: Joi.string().trim().max(50).required().messages({
+            admin_username: Joi.string().trim().required().messages({
                 "string.base": "Username harus berupa teks.",
                 "string.empty": "Username tidak boleh kosong.",
-                "string.max": "Username tidak boleh lebih dari 50 karakter.",
                 "any.required": "Username wajib diisi."
             }),
             admin_password: Joi.string().trim().required().messages({

@@ -76,12 +76,6 @@ const createRentalDetail = {
                 "number.integer": "Jumlah harus berupa angka bulat.",
                 "number.positive": "Jumlah harus bernilai positif.",
                 "any.required": "Jumlah wajib diisi."
-            }),
-            penyewaan_detail_subharga: Joi.number().integer().positive().required().messages({
-                "number.base": "Subharga harus berupa angka.",
-                "number.integer": "Subharga harus berupa angka bulat.",
-                "number.positive": "Subharga harus bernilai positif.",
-                "any.required": "Subharga wajib diisi."
             })
         })
         .options({ stripUnknown: true })
@@ -104,11 +98,6 @@ const updateRentalDetail = {
                 "number.base": "Jumlah harus berupa angka.",
                 "number.integer": "Jumlah harus berupa angka bulat.",
                 "number.positive": "Jumlah harus bernilai positif."
-            }),
-            penyewaan_detail_subharga: Joi.number().integer().positive().messages({
-                "number.base": "Subharga harus berupa angka.",
-                "number.integer": "Subharga harus berupa angka bulat.",
-                "number.positive": "Subharga harus bernilai positif."
             })
         })
         .options({ stripUnknown: true }),

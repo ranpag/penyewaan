@@ -141,7 +141,7 @@ const updateRental = {
                     })
                 )
                 .external(async (items: { alat_id: number; jumlah: number }[]) => {
-                    if (items.length === 0) return items;
+                    if ((Array.isArray(items) && items.length === 0) || !items) return items;
                     const alatIds = items.map((item: { alat_id: number; jumlah: number }) => item.alat_id);
                     await existingTools(alatIds);
                     return items;

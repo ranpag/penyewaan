@@ -18,7 +18,14 @@ const validate = async (schema: Record<string, Joi.ObjectSchema>, data: Record<s
         return { error: null, value };
     } catch (error) {
         if (error instanceof Joi.ValidationError) {
-            const errorMessages = error.details.map((detail: Joi.ValidationErrorItem) => detail.message);
+            const errorMessages = error.details.reduce((acc: Record<string, string[]>, err) => {
+                const key = err.context?.key;
+                if (key !== undefined) {
+                    acc[key] = acc[key] || [];
+                    acc[key].push(err.message);
+                }
+                return acc;
+            }, {});
             return { error: errorMessages, value: null };
         }
         return { error, value: null };

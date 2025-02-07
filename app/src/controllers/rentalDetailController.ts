@@ -82,22 +82,65 @@ const create = async (req: Request, res: Response) => {
 
 const update = async (req: Request, res: Response) => {
     const { detailId } = req.params;
-    const numberBodyValue = req.body;
+    const { penyewaan_detail_penyewaan_id, penyewaan_detail_alat_id, penyewaan_detail_jumlah } = req.body;
 
     try {
         const resultNumberParams = checkNaN({ detailId });
-        const { penyewaan_detail_penyewaan_id, penyewaan_detail_alat_id, penyewaan_detail_jumlah, penyewaan_detail_subharga } = checkNaN({
-            ...numberBodyValue
+        const resultNumberBody = checkNaN({
+            penyewaan_detail_penyewaan_id,
+            penyewaan_detail_alat_id,
+            penyewaan_detail_jumlah
         });
 
-        const detail = await prisma.penyewaan_detail.update({
-            data: {
-                penyewaan_detail_penyewaan_id: penyewaan_detail_penyewaan_id,
-                penyewaan_detail_alat_id: penyewaan_detail_alat_id,
-                penyewaan_detail_jumlah: penyewaan_detail_jumlah,
-                penyewaan_detail_subharga: penyewaan_detail_subharga
-            },
-            where: { penyewaan_detail_id: resultNumberParams.detailId }
+        const detail = await prisma.$transaction(async (tx) => {
+            const rentalDetails = await tx.penyewaan_detail.findUnique({
+                where: { penyewaan_detail_id: resultNumberParams.detailId }
+            });
+
+            if (!rentalDetails) throw new errorAPI("Penyewaan detail tidak ditemukan", 404);
+
+            await tx.alat.update({
+                where: { alat_id: rentalDetails.penyewaan_detail_alat_id },
+                data: { alat_stok: { increment: rentalDetails.penyewaan_detail_jumlah } }
+            });
+
+            const stockReductionTool = await tx.alat.update({
+                where: { alat_id: resultNumberBody.penyewaan_detail_alat_id || rentalDetails.penyewaan_detail_alat_id },
+                data: { alat_stok: { decrement: resultNumberBody.penyewaan_detail_jumlah || rentalDetails.penyewaan_detail_jumlah } }
+            });
+
+            await tx.penyewaan_detail.update({
+                where: { penyewaan_detail_id: resultNumberParams.detailId },
+                data: {
+                    penyewaan: {
+                        update: {
+                            penyewaan_totalharga: { decrement: rentalDetails.penyewaan_detail_subharga }
+                        }
+                    }
+                }
+            });
+
+            const updatedRentalDetail = await tx.penyewaan_detail.update({
+                where: {
+                    penyewaan_detail_id: resultNumberParams.detailId
+                },
+                data: {
+                    ...resultNumberBody,
+                    penyewaan_detail_subharga:
+                        stockReductionTool.alat_hargaperhari * (resultNumberBody.penyewaan_detail_jumlah || rentalDetails.penyewaan_detail_jumlah)
+                }
+            });
+
+            return await tx.penyewaan_detail.update({
+                where: { penyewaan_detail_id: resultNumberParams.detailId },
+                data: {
+                    penyewaan: {
+                        update: {
+                            penyewaan_totalharga: { increment: updatedRentalDetail.penyewaan_detail_subharga }
+                        }
+                    }
+                }
+            });
         });
 
         return res.status(200).json({

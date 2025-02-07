@@ -41,10 +41,10 @@ const signin = async (req: Request, res: Response) => {
             }
         });
 
-        if (!admin) throw new errorAPI("Sign in failed", 401, ["Invalid credentials"]);
+        if (!admin) throw new errorAPI("Unauthorized", 401, ["Invalid credentials"]);
 
         const isPasswordValid = await bcrypt.compare(req.body.admin_password, admin.admin_password);
-        if (!isPasswordValid) throw new errorAPI("Sign in failed", 401, ["Invalid credentials"]);
+        if (!isPasswordValid) throw new errorAPI("Unauthorized", 401, ["Invalid credentials"]);
 
         const adminData = {
             id: admin.admin_id,

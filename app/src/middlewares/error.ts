@@ -16,8 +16,7 @@ export const handler = (err: Error | errorAPI, _req: Request, res: Response, _ne
         res.status(err.status).json({
             success: false,
             message: err.message,
-            errors: Array.isArray(err.errors) ? err.errors : [err.message]
-            // ...(env.NODE_ENV === "development" && { stack: err.stack })
+            errors: err.errors
         });
 
         return;
@@ -25,9 +24,7 @@ export const handler = (err: Error | errorAPI, _req: Request, res: Response, _ne
 
     res.status(500).json({
         success: false,
-        message: "INTERNAL_SERVER_ERROR",
-        errors: ["INTERNAL_SERVER_ERROR"]
-        // ...(env.NODE_ENV === "development" && { stack: err.stack })
+        message: "Internal Server Error"
     });
 };
 

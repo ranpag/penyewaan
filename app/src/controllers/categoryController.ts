@@ -42,10 +42,11 @@ const selected = async (req: Request, res: Response) => {
         const category = await prisma.kategori.findUnique({
             where: {
                 kategori_id: resultNumberParams.categoryId
-            }
+            },
+            include: { alat: true }
         });
 
-        if (!category) throw new errorAPI("Kategori not found", 404);
+        if (!category) throw new errorAPI("Kategori tidak ditemukan", 404);
 
         return res.status(200).json({
             success: true,
