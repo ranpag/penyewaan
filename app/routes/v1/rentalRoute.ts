@@ -14,10 +14,11 @@ router.put("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalVa
 router.patch("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.updateRental), control(rentalController.update));
 router.delete("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.destroyRental), control(rentalController.destroy));
 router.delete(
-    "/:rentalId/notrestoretoolstock",
+    "/:rentalId/force",
     middlewareHandler("auth"),
     sanitizeAndValidate(rentalValidation.destroyRental),
     control(rentalController.destroyNotRestoreToolsStock)
 );
+router.patch("/:rentalId/clear", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.selectedRental), control(rentalController.clear));
 
 export default router;

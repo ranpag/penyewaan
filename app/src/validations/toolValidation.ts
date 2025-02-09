@@ -14,9 +14,9 @@ const existingCategory = async (value: string | number, _helper: Joi.ExternalHel
             [
                 {
                     message: `Kategori dengan id ${categoryId} tidak ada`,
-                    path: ["alat_kategori_id"],
+                    path: ["body", "alat_kategori_id"],
                     type: "existing",
-                    context: { value }
+                    context: { label: "alat_kategori_id", key: "alat_kategori_id" }
                 }
             ],
             value
@@ -62,20 +62,12 @@ const createTool = {
                 "number.min": "Stok alat minimal 1.",
                 "any.required": "Stok alat wajib diisi."
             }),
-            alat_kategori_id: Joi.number()
-                .integer()
-                .positive()
-                .required()
-                .when(Joi.exist(), {
-                    then: Joi.number().external(existingCategory),
-                    otherwise: Joi.optional().strip()
-                })
-                .messages({
-                    "number.base": "ID kategori alat harus berupa angka.",
-                    "number.integer": "ID kategori alat harus berupa angka bulat.",
-                    "number.positive": "ID kategori alat harus bernilai positif.",
-                    "any.required": "ID kategori alat wajib diisi."
-                })
+            alat_kategori_id: Joi.number().integer().positive().required().external(existingCategory).messages({
+                "number.base": "ID kategori alat harus berupa angka.",
+                "number.integer": "ID kategori alat harus berupa angka bulat.",
+                "number.positive": "ID kategori alat harus bernilai positif.",
+                "any.required": "ID kategori alat wajib diisi."
+            })
         })
         .options({ stripUnknown: true })
 };

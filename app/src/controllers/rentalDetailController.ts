@@ -8,8 +8,18 @@ import { Prisma } from "@prisma/client";
 const index = async (req: Request, res: Response) => {
     try {
         const rentalDetails = await prisma.penyewaan_detail.findMany({
+            include: {
+                alat: {
+                    select: {
+                        alat_id: true,
+                        alat_nama: true,
+                        alat_hargaperhari: true,
+                        kategori: true
+                    }
+                }
+            },
             take: 10,
-            skip: parseInt(req.query.page as string) * 10 || 0
+            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
         });
 
         const totalAllDetails = await prisma.penyewaan_detail.count();
@@ -21,7 +31,8 @@ const index = async (req: Request, res: Response) => {
             pagination: {
                 totalItem: rentalDetails.length,
                 totalData: totalAllDetails,
-                totalPage: Math.ceil(totalAllDetails / 10)
+                totalPage:
+                    totalAllDetails > 10 ? Math.floor(totalAllDetails / rentalDetails.length) + 1 : Math.floor(totalAllDetails / rentalDetails.length)
             }
         });
     } catch (err) {
@@ -37,7 +48,28 @@ const selected = async (req: Request, res: Response) => {
 
         const detail = await prisma.penyewaan_detail.findUnique({
             where: { penyewaan_detail_id: resultNumberParams.detailId },
-            include: { penyewaan: true, alat: { include: { kategori: true } } }
+            include: {
+                penyewaan: {
+                    include: {
+                        pelanggan: {
+                            select: {
+                                pelanggan_id: true,
+                                pelanggan_nama: true
+                            }
+                        },
+                        _count: true
+                    }
+                },
+                alat: {
+                    include: {
+                        kategori: {
+                            include: {
+                                _count: true
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         if (!detail) throw new errorAPI("Penyewaan detail not found", 404);
@@ -66,6 +98,16 @@ const create = async (req: Request, res: Response) => {
                 penyewaan_detail_alat_id,
                 penyewaan_detail_jumlah,
                 penyewaan_detail_subharga
+            },
+            include: {
+                alat: {
+                    select: {
+                        alat_id: true,
+                        alat_nama: true,
+                        alat_hargaperhari: true,
+                        kategori: true
+                    }
+                }
             }
         });
 
@@ -137,6 +179,16 @@ const update = async (req: Request, res: Response) => {
                     penyewaan: {
                         update: {
                             penyewaan_totalharga: { increment: updatedRentalDetail.penyewaan_detail_subharga }
+                        }
+                    }
+                },
+                include: {
+                    alat: {
+                        select: {
+                            alat_id: true,
+                            alat_nama: true,
+                            alat_hargaperhari: true,
+                            kategori: true
                         }
                     }
                 }

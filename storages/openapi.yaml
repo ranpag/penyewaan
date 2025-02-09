@@ -1,0 +1,2749 @@
+openapi: 3.0.0
+info:
+  title: Menejemen Penyewaan API
+  description: Dokumentasi API untuk aplikasi penyewaan
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/v1
+    
+x-tagGroups:
+  - name: Autentikasi & Otorisasi
+    tags:
+      - Autentikasi
+  - name: The Object
+    tags:
+      - Kategori
+      - Alat
+      - Pelanggan
+      - Data Pelanggan
+  - name: Transaksi
+    tags:
+      - Penyewaan
+      - Detail Penyewaan
+tags:
+  - name: Autentikasi
+    description: Operasi autentikasi seperti sign in, sign up, refresh
+  - name: Kategori
+    description: Semua tentang kategori
+  - name: Alat
+    description: Semua tentang alat
+  - name: Pelanggan
+    description: Semua tentang pelanggan
+  - name: Data Pelanggan
+    description: API spesifik untuk data pelanggan yang sebenarnya bisa dilakuakan langsung di Pelanggan
+  - name: Penyewaan
+    description: Semua tentang penyewaan & bisa langsung melakuakan request sekaligus tanpa harus mengakses /detail/pelanggan
+  - name: Detail Penyewaan
+    description: API spesifik untuk detail penyewaan yang sebarnya bisa dilakuakan langsung di Penyewaan
+    
+paths:
+  /auth/signin:
+    post:
+      tags:
+        - Autentikasi
+      summary: Sign in sebagai admin
+      description: Autentikasi admin dan mengembalikan token akses serta refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                admin_username:
+                  type: string
+                  example: "admin4"
+                admin_password:
+                  type: string
+                  example: "password123"
+              required:
+                - admin_username
+                - admin_password
+      responses:
+        200:
+          description: Signin berhasil, mengembalikan token akses dan refresh token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Signin successfull"
+                  data:
+                    type: object
+                    properties:
+                      adminData:
+                        type: object
+                        properties:
+                          admin_id:
+                            type: integer
+                            example: 6
+                          admin_username:
+                            type: string
+                            example: "admin4"
+                      token:
+                        type: object
+                        properties:
+                          access_token:
+                            type: string
+                            example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          refresh_token:
+                            type: string
+                            example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        400:
+          description: Data yang dikirim tidak valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      admin_username:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Username tidak boleh kosong."
+                          - "Username wajib diisi."
+                      admin_password:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Password tidak boleh kosong."
+                          - "Password wajib diisi."
+        401:
+          description: Permintaan tidak memiliki otorisasi yang valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "Invalid credentials"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /auth/signup:
+    post:
+      tags:
+        - Autentikasi
+      summary: Sign up sebagai admin
+      description: Mendaftar sebagai admin mengembalikan data admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                admin_username:
+                  type: string
+                  example: "admin4"
+                admin_password:
+                  type: string
+                  example: "password123"
+                confirm_password:
+                  type: string
+                  example: "password123"
+              required:
+                - admin_username
+                - admin_password
+                - confirm_password
+      responses:
+        201:
+          description: Signup berhasil, mengembalikan data admin.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Signin successfull"
+                  data:
+                    type: object
+                    properties:
+                      admin_id:
+                        type: integer
+                        example: 6
+                      admin_username:
+                        type: string
+                        example: "admin4"
+        400:
+          description: Data yang dikirim tidak valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      admin_username:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Admin Username tidak boleh kosong."
+                          - "Admin username admin tidak boleh lebih dari 50 karakter."
+                      admin_password:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Password admin tidak boleh kosong."
+                          - "Password admin harus memiliki minimal 8 karakter."
+                      confirm_password:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Konfirmasi password tidak boleh kosong."
+                          - "Konfirmasi password harus sama dengan password admin."
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /auth/refresh:
+    get:
+      tags:
+        - Autentikasi
+      summary: Membuat access token baru tanpa signin
+      description: Menggunakan refresh token untuk mendapatkan access token baru.
+      parameters:
+        - in: header
+          name: X-Refresh-Token
+          required: true
+          schema:
+            type: string
+            example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          description: Refresh token yang digunakan untuk mendapatkan access token baru.
+      responses:
+        200:
+          description: Access token berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Access extended"
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: object
+                        properties:
+                          access_token:
+                            type: string
+                            example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        401:
+          description: Refresh token tidak valid atau kadaluarsa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "Invalid refresh token"
+        404:
+          description: Refresh token tidak dikirim atau format salah
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    example:
+                      X-Refresh-Token:
+                        - "Refresh token wajib dikirim."
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /changepassword:
+    patch:
+      tags:
+        - Autentikasi
+      security:
+        - BearerAuth: []
+      summary: Change password admin
+      description: Mengganti password admin dan mengembalikan data admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_password:
+                  type: string
+                  example: "password123"
+                confirm_password:
+                  type: string
+                  example: "password123"
+              required:
+                - new_password
+                - confirm_password
+      responses:
+        200:
+          description: Ganti password, mengembalikan data admin.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Password berhasil di ganti"
+                  data:
+                    type: object
+                    properties:
+                      admin_id:
+                        type: integer
+                        example: 6
+                      admin_username:
+                        type: string
+                        example: "admin4"
+        400:
+          description: Data yang dikirim tidak valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      new_password:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Password baru tidak boleh kosong."
+                          - "Password baru harus memiliki minimal 8 karakter."
+                      confirm_password:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Konfirmasi password tidak boleh kosong."
+                          - "Konfirmasi password harus sama dengan password baru."
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /kategori:
+    get:
+      tags:
+        - Kategori
+      summary: Ambil semua kategori
+      description: Mengembalikan daftar semua kategori yang tersedia.
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+      responses:
+        200:
+          $ref: '#/components/responses/KategoriAll'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Kategori
+      security:
+        - BearerAuth: []
+      summary: Membuat kategori baru
+      description: Menambahkan kategori baru ke dalam sistem.
+      requestBody:
+        $ref: "#/components/requestBodies/CreateKategori"
+      responses:
+        200:
+          $ref: "#/components/responses/KategoriCreated"
+        400:
+          $ref: "#/components/responses/KategoriError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /kategori/{id}:
+    get:
+      tags:
+        - Kategori
+      summary: Ambil kategori detail
+      security:
+        - BearerAuth: []
+      description: Mengambil informasi kategori berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/KategoriId"
+      responses:
+        200:
+          $ref: "#/components/responses/KategoriById"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Kategori
+      summary: Perbarui kategori detail
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi kategori berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateKategori"
+      parameters:
+        - $ref: "#/components/parameters/KategoriId"
+      responses:
+        200:
+          $ref: "#/components/responses/KategoriUpdated"
+        400:
+          $ref: "#/components/responses/KategoriError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags:
+        - Kategori
+      summary: Perbarui kategori
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi kategori berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateKategori"
+      parameters:
+        - $ref: "#/components/parameters/KategoriId"
+      responses:
+        200:
+          $ref: "#/components/responses/KategoriUpdated"
+        400:
+          $ref: "#/components/responses/KategoriError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Kategori
+      summary: Menghapus kategori
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi kategori berdasarkan ID, ini juga akan menghapus alat yang mereferensinya.
+      parameters:
+        - $ref: "#/components/parameters/KategoriId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /alat:
+    get:
+      tags:
+        - Alat
+      summary: Ambil semua alat
+      description: Mengembalikan daftar semua alat yang tersedia.
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+      responses:
+        200:
+          $ref: '#/components/responses/AlatAll'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Alat
+      security:
+        - BearerAuth: []
+      summary: Membuat alat baru
+      description: Menambahkan alat baru ke dalam sistem.
+      requestBody:
+        $ref: "#/components/requestBodies/CreateAlat"
+      responses:
+        200:
+          $ref: "#/components/responses/AlatCreated"
+        400:
+          $ref: "#/components/responses/AlatError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /alat/{id}:
+    get:
+      tags:
+        - Alat
+      summary: Ambil alat detail
+      security:
+        - BearerAuth: []
+      description: Mengambil informasi alat berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/AlatId"
+      responses:
+        200:
+          $ref: "#/components/responses/AlatById"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Alat
+      summary: Perbarui alat detail
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi alat berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateAlat"
+      parameters:
+        - $ref: "#/components/parameters/AlatId"
+      responses:
+        200:
+          $ref: "#/components/responses/AlatUpdated"
+        400:
+          $ref: "#/components/responses/AlatError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags:
+        - Alat
+      summary: Perbarui alat
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi alat berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateAlat"
+      parameters:
+        - $ref: "#/components/parameters/AlatId"
+      responses:
+        200:
+          $ref: "#/components/responses/AlatUpdated"
+        400:
+          $ref: "#/components/responses/AlatError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Alat
+      summary: Menghapus alat
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi alat berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/AlatId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /pelanggan:
+    get:
+      tags:
+        - Pelanggan
+      summary: Ambil semua pelanggan
+      description: Mengembalikan daftar semua pelanggan yang tersedia.
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+      responses:
+        200:
+          $ref: '#/components/responses/PelangganAll'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Pelanggan
+      security:
+        - BearerAuth: []
+      summary: Membuat pelanggan baru
+      description: Menambahkan pelanggan baru ke dalam sistem.
+      requestBody:
+        $ref: "#/components/requestBodies/CreatePelanggan"
+      responses:
+        200:
+          $ref: "#/components/responses/PelangganCreated"
+        400:
+          $ref: "#/components/responses/PelangganError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        413:
+          $ref: "#/components/responses/PayloadTooLarge"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaType"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /pelanggan/{id}:
+    get:
+      tags:
+        - Pelanggan
+      summary: Ambil pelangan detail
+      security:
+        - BearerAuth: []
+      description: Mengambil informasi pelanggan berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/PelangganId"
+      responses:
+        200:
+          $ref: "#/components/responses/PelangganById"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Pelanggan
+      summary: Perbarui pelanggan detail
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi pelanggan berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdatePelanggan"
+      parameters:
+        - $ref: "#/components/parameters/PelangganId"
+      responses:
+        200:
+          $ref: "#/components/responses/PelangganUpdated"
+        400:
+          $ref: "#/components/responses/PelangganError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        413:
+          $ref: "#/components/responses/PayloadTooLarge"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaType"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags:
+        - Pelanggan
+      summary: Perbarui pelanggan
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi pelanggan berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdatePelanggan"
+      parameters:
+        - $ref: "#/components/parameters/PelangganId"
+      responses:
+        200:
+          $ref: "#/components/responses/PelangganUpdated"
+        400:
+          $ref: "#/components/responses/PelangganError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        413:
+          $ref: "#/components/responses/PayloadTooLarge"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaType"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Pelanggan
+      summary: Menghapus pelanggan
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi pelanggan berdasarkan ID dan juga sekaligus menghapus penyewaan yang pernah dilakukan.
+      parameters:
+        - $ref: "#/components/parameters/PelangganId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /data/pelanggan:
+    get:
+      tags:
+        - Data Pelanggan
+      summary: Ambil semua data pelanggan
+      description: Mengembalikan daftar semua data pelanggan yang tersedia.
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+      responses:
+        200:
+          $ref: '#/components/responses/DataPelangganAll'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Data Pelanggan
+      security:
+        - BearerAuth: []
+      summary: Membuat data pelanggan baru
+      description: Menambahkan data pelanggan baru ke dalam sistem.
+      requestBody:
+        $ref: "#/components/requestBodies/CreateDataPelanggan"
+      responses:
+        200:
+          $ref: "#/components/responses/DataPelangganCreated"
+        400:
+          $ref: "#/components/responses/DataPelangganError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        413:
+          $ref: "#/components/responses/PayloadTooLarge"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaType"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /data/pelanggan/{id}:
+    get:
+      tags:
+        - Data Pelanggan
+      summary: Ambil data pelangan detail
+      security:
+        - BearerAuth: []
+      description: Mengambil informasi data pelanggan berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/DataPelangganId"
+      responses:
+        200:
+          $ref: "#/components/responses/DataPelangganById"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Data Pelanggan
+      summary: Perbarui data pelanggan detail
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi data pelanggan berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateDataPelanggan"
+      parameters:
+        - $ref: "#/components/parameters/DataPelangganId"
+      responses:
+        200:
+          $ref: "#/components/responses/DataPelangganUpdated"
+        400:
+          $ref: "#/components/responses/DataPelangganError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        413:
+          $ref: "#/components/responses/PayloadTooLarge"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaType"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags:
+        - Data Pelanggan
+      summary: Perbarui data pelanggan
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi data pelanggan berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateDataPelanggan"
+      parameters:
+        - $ref: "#/components/parameters/DataPelangganId"
+      responses:
+        200:
+          $ref: "#/components/responses/DataPelangganUpdated"
+        400:
+          $ref: "#/components/responses/DataPelangganError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        413:
+          $ref: "#/components/responses/PayloadTooLarge"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaType"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Data Pelanggan
+      summary: Menghapus data pelanggan
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi data pelanggan berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/DataPelangganId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /penyewaan:
+    get:
+      tags:
+        - Penyewaan
+      summary: Ambil semua penyewaan
+      description: Mengembalikan daftar semua penyewaan yang tersedia.
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+      responses:
+        200:
+          $ref: '#/components/responses/PenyewaanAll'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Penyewaan
+      security:
+        - BearerAuth: []
+      summary: Membuat penyewaan baru
+      description: Menambahkan penyewaan baru ke dalam sistem.
+      requestBody:
+        $ref: "#/components/requestBodies/CreatePenyewaan"
+      responses:
+        200:
+          $ref: "#/components/responses/PenyewaanCreated"
+        400:
+          $ref: "#/components/responses/PenyewaanError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /penyewaan/{id}:
+    get:
+      tags:
+        - Penyewaan
+      summary: Ambil penyewaan detail
+      security:
+        - BearerAuth: []
+      description: Mengambil informasi penyewaan berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/PenyewaanId"
+      responses:
+        200:
+          $ref: "#/components/responses/PenyewaanById"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Penyewaan
+      summary: Perbarui penyewaan detail
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi penyewaan berdasarkan ID, jika ada perubahan di daftar_alat maka stok alat yang sebelumnya disewa akan dikembalikan.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdatePenyewaan"
+      parameters:
+        - $ref: "#/components/parameters/PenyewaanId"
+      responses:
+        200:
+          $ref: "#/components/responses/PenyewaanUpdated"
+        400:
+          $ref: "#/components/responses/PenyewaanError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags:
+        - Penyewaan
+      summary: Perbarui penyewaan
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi penyewaan berdasarkan ID, jika ada perubahan di daftar_alat maka stok alat yang sebelumnya disewa akan dikembalikan.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdatePenyewaan"
+      parameters:
+        - $ref: "#/components/parameters/PenyewaanId"
+      responses:
+        200:
+          $ref: "#/components/responses/PenyewaanUpdated"
+        400:
+          $ref: "#/components/responses/PenyewaanError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Penyewaan
+      summary: Menghapus penyewaan & kembalikan stok alat
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi penyewaan berdasarkan ID, menghapus penyewaan detail dan juga akan mengembalikan stok alat yang disewa.
+      parameters:
+        - $ref: "#/components/parameters/PenyewaanId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /penyewaan/{id}/force:
+    delete:
+      tags:
+        - Penyewaan
+      summary: Menghapus penyewaan & tidak kembalikan stok alat
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi detail penyewaan berdasarkan ID, menghapus juga penyewaan detailnya dan tidak akan mengembalikan stok alat yang disewa
+      parameters:
+        - $ref: "#/components/parameters/PenyewaanId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /penyewaan/{id}/selesai:
+    patch:
+      tags:
+        - Penyewaan
+      summary: Selesaikan penyewaan
+      security:
+        - BearerAuth: []
+      description: Mengubah status pembayaran menjadi LUNAS dan status pengembalian menjadi SUDAH KEMBALI dengan mengembalikan stok alat dan mempertahankan jumlah alat yang disewa pada data penyewaan detail
+      parameters:
+        - $ref: "#/components/parameters/PenyewaanId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /detail/penyewaan:
+    get:
+      tags:
+        - Detail Penyewaan
+      summary: Ambil semua detail penyewaan
+      description: Mengembalikan daftar semua detail penyewaan yang tersedia.
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+      responses:
+        200:
+          $ref: '#/components/responses/DetailPenyewaanAll'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Detail Penyewaan
+      security:
+        - BearerAuth: []
+      summary: Membuat detail penyewaan baru
+      description: Menambahkan detail penyewaan baru ke dalam sistem.
+      requestBody:
+        $ref: "#/components/requestBodies/CreateDetailPenyewaan"
+      responses:
+        200:
+          $ref: "#/components/responses/DetailPenyewaanCreated"
+        400:
+          $ref: "#/components/responses/DetailPenyewaanError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /detail/penyewaan/{id}:
+    get:
+      tags:
+        - Detail Penyewaan
+      summary: Ambil penyewaan detail
+      security:
+        - BearerAuth: []
+      description: Mengambil informasi detail penyewaan berdasarkan ID.
+      parameters:
+        - $ref: "#/components/parameters/DetailPenyewaanId"
+      responses:
+        200:
+          $ref: "#/components/responses/DetailPenyewaanById"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Detail Penyewaan
+      summary: Perbarui penyewaan detail
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi detail penyewaan berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateDetailPenyewaan"
+      parameters:
+        - $ref: "#/components/parameters/DetailPenyewaanId"
+      responses:
+        200:
+          $ref: "#/components/responses/DetailPenyewaanUpdated"
+        400:
+          $ref: "#/components/responses/DetailPenyewaanError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags:
+        - Detail Penyewaan
+      summary: Perbarui penyewaan detail 
+      security:
+        - BearerAuth: []
+      description: Perbarui informasi detail penyewaan berdasarkan ID.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateDetailPenyewaan"
+      parameters:
+        - $ref: "#/components/parameters/DetailPenyewaanId"
+      responses:
+        200:
+          $ref: "#/components/responses/DetailPenyewaanUpdated"
+        400:
+          $ref: "#/components/responses/DetailPenyewaanError"
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        404:
+          $ref: '#/components/responses/NotFoundError'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Detail Penyewaan
+      summary: Menghapus detail penyewaan & perubahan stok dan total harga
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi detail penyewaan berdasarkan ID, mengembalikan jumlah alat yang dipinjam ke stoknya, dan mengurangi total total harga penyewaan.
+      parameters:
+        - $ref: "#/components/parameters/DetailPenyewaanId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /detail/penyewaan/{id}/force:
+    delete:
+      tags:
+        - Detail Penyewaan
+      summary: Menghapus penyewaan detail & tidak perubahan stok dan total harga
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi detail penyewaan berdasarkan ID, tidak mengembalikan jumlah alat yang disewa ke stoknya, dan tidak mengurangi total harga penyewaan.
+      parameters:
+        - $ref: "#/components/parameters/PenyewaanId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+    
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+  parameters:
+    PageQuery:
+      name: page
+      in: query
+      schema:
+        type: integer
+        example: 2
+        default: 1
+    KategoriId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 3
+    AlatId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 3
+    PelangganId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 3
+    DataPelangganId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 3
+    PenyewaanId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 3
+    DetailPenyewaanId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 3
+      
+  schemas:
+    Pagination:
+      type: object
+      properties:
+        totalItem:
+          type: integer
+          example: 5
+        totalAllData:
+          type: integer
+          example: 5
+        totalPage:
+          type: integer
+          example: 1
+      
+    Kategori:
+      type: object
+      properties:
+        kategori_id:
+          type: integer
+          example: 1
+        kategori_nama:
+          type: string
+          example: "Elektronik"
+        _count:
+          type: object
+          properties:
+            alat:
+              type: integer
+              example: 34
+    KategoriCreateRequest:
+      type: object
+      properties:
+        kategori_nama:
+          type: string
+          example: "Game"
+      required:
+        - kategori_nama
+    KategoriUpdateRequest:
+      type: object
+      properties:
+        kategori_nama:
+          type: string
+          example: "Game"
+    CreateKategoriResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan kategori"
+        data:
+          $ref: '#/components/schemas/Kategori'
+    GetAllKategoriResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan semua kategori"
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kategori'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    GetOneKategoriResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan kategori"
+        data:
+          $ref: '#/components/schemas/Kategori'
+    UpdateKategoriResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan kategori"
+        data:
+          $ref: '#/components/schemas/Kategori'
+    KategoriErrorValidation:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation error"
+        errors:
+          type: object
+          properties:
+            kategori_nama:
+              type: array
+              items:
+                type: string
+              example:
+                - "Nama kategori sudah ada."
+                - "Nama kategori wajib diisi."
+      
+    Alat:
+      type: object
+      properties:
+        alat_id:
+          type: integer
+          example: 6
+        alat_kategori_id:
+          type: integer
+          example: 1
+        alat_nama:
+          type: string
+          example: "HP"
+        alat_deskripsi:
+          type: string
+          example: "Alat untuk menonton TV"
+        alat_hargaperhari:
+          type: integer
+          example: 30000
+        alat_stok:
+          type: integer
+          example: 12
+        kategori:
+          $ref: "#/components/schemas/Kategori"
+        _count:
+          type: object
+          properties:
+            total_disewa:
+              type: integer
+              example: 34
+    AlatCreateRequest:
+      type: object
+      properties:
+        alat_nama:
+          type: string
+          example: "HP"
+        alat_deskripsi:
+          type: string
+          example: "Alat untuk menonton TV"
+        alat_hargaperhari:
+          type: integer
+          example: 30000
+        alat_stok:
+          type: integer
+          example: 12
+        alat_kategori_id:
+          type: integer
+          example: 1
+      required:
+        - alat_nama
+        - alat_deskripsi
+        - alat_hargaperhari
+        - alat_stok
+        - alat_kategori_id
+    AlatUpdateRequest:
+      type: object
+      properties:
+        alat_nama:
+          type: string
+          example: "HP"
+        alat_deskripsi:
+          type: string
+          example: "Alat untuk menonton TV"
+        alat_hargaperhari:
+          type: integer
+          example: 30000
+        alat_stok:
+          type: integer
+          example: 12
+        alat_kategori_id:
+          type: integer
+          example: 1
+    CreateAlatResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success membuat alat baru"
+        data:
+          $ref: "#/components/schemas/Alat"
+    GetAllAlatResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan semua alat"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alat"
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    GetOneAlatResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan alat"
+        data:
+          $ref: "#/components/schemas/Alat"
+    UpdateAlatResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mengupdate alat"
+        data:
+          $ref: "#/components/schemas/Alat"
+    AlatErrorValidation:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation error"
+        errors:
+          type: object
+          properties:
+            alat_nama:
+              type: array
+              items:
+                type: string
+              example:
+                - "Nama alat tidak boleh kosong."
+                - "Nama alat tidak boleh lebih dari 150 karakter."
+            alat_deskripsi:
+              type: array
+              items:
+                type: string
+              example:
+                - "Deskripsi alat tidak boleh kosong."
+                - "Deskripsi alat tidak boleh lebih dari 255 karakter."
+            alat_hargaperhari:
+              type: array
+              items:
+                type: string
+              example:
+                - "Harga per hari harus berupa angka bulat."
+                - "Harga per hari harus bernilai positif."
+            alat_stok:
+              type: array
+              items:
+                type: string
+              example:
+                - "Stok alat harus berupa angka bulat."
+                - "Stok alat minimal 1."
+            alat_kategori_id:
+              type: array
+              items:
+                type: string
+              example:
+                - "ID kategori alat harus berupa angka bulat."
+                - "Kategori dengan id 999 tidak ada"
+      
+    Pelanggan:
+      type: object
+      properties:
+        pelanggan_id:
+          type: integer
+          example: 2
+        pelanggan_nama:
+          type: string
+          example: Hatsune Miku
+        pelanggan_alamat:
+          type: string
+          example: Jepang
+        pelanggan_notelp:
+          type: string
+          example: 123456789
+        pelanggan_email:
+          type: string
+          example: miku@vocaloid.jp
+        pelanggan_data:
+          $ref: '#/components/schemas/DataPelanggan'
+        _count:
+          type: object
+          properties:
+            penyewaan:
+              type: integer
+              example: 34
+    PelangganCreateRequest:
+      type: object
+      properties:
+        pelanggan_nama:
+          type: string
+          example: Hatsune Miku
+        pelanggan_alamat:
+          type: string
+          example: Jepang
+        pelanggan_notelp:
+          type: string
+          example: 123456789
+        pelanggan_email:
+          type: string
+          example: miku@vocaloid.jp
+        pelanggan_data_jenis:
+          type: string
+          enum: [KTP, SIM]
+          example: KTP
+        pelanggan_data_file:
+          type: string
+          format: binary
+          enum: 
+            - .jpg
+            - .jpeg
+            - .png
+            - .webp
+            - .avif
+          example: miku.jpg
+      required:
+        - pelanggan_nama
+        - pelanggan_alamat
+        - pelanggan_notelp
+        - pelanggan_email
+    PelangganUpdateRequest:
+      type: object
+      properties:
+        pelanggan_nama:
+          type: string
+          example: Hatsune Miku
+        pelanggan_alamat:
+          type: string
+          example: Jepang
+        pelanggan_notelp:
+          type: string
+          example: 123456789
+        pelanggan_email:
+          type: string
+          example: miku@vocaloid.jp
+        pelanggan_data_jenis:
+          type: string
+          enum: [KTP, SIM]
+          example: KTP
+        pelanggan_data_file:
+          type: string
+          format: binary
+          enum: 
+            - .jpg
+            - .jpeg
+            - .png
+            - .webp
+            - .avif
+          example: miku.jpg
+    CreatePelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success membuat pelanggan baru"
+        data:
+          $ref: "#/components/schemas/Pelanggan"
+    GetAllPelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan semua pelanggan"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pelanggan"
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    GetOnePelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan pelanggan"
+        data:
+          type: object
+          properties:
+            pelanggan_id:
+              type: integer
+              example: 2
+            pelanggan_nama:
+              type: string
+              example: Hatsune Miku
+            pelanggan_alamat:
+              type: string
+              example: Jepang
+            pelanggan_notelp:
+              type: string
+              example: 123456789
+            pelanggan_email:
+              type: string
+              example: miku@vocaloid.jp
+            pelanggan_data:
+              $ref: '#/components/schemas/DataPelanggan'
+            penyewaan:
+              type: array
+              items:
+                type: object
+                properties:
+                  penyewaan_id:
+                    type: integer
+                    example: 1
+                  penyewaan_pelanggan_id:
+                    type: integer
+                    example: 3
+                  penyewaan_tglsewa:
+                    type: string
+                    format: date
+                    example: 2025-02-07T01:10:48.670Z
+                  penyewaan_tglkembali:
+                    type: string
+                    format: date
+                    example: 2025-02-07T01:10:48.670Z
+                  penyewaan_sttspembayaran:
+                    type: string
+                    example: LUNAS
+                  penyewaan_sttskembali:
+                    type: string
+                    example: SUDAH_KEMBALI
+                  penyewaan_totalharga:
+                    type: integer
+                    example: 750000
+                  _count:
+                    type: object
+                    properties:
+                      penyewaan_detail:
+                        type: integer
+                        example: 1
+            _count:
+              type: object
+              properties:
+                penyewaan:
+                  type: integer
+                  example: 34
+    UpdatePelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mengupdate pelanggan"
+        data:
+          $ref: "#/components/schemas/Pelanggan"
+    PelangganErrorValidation:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation error"
+        errors:
+          type: object
+          properties:
+            pelanggan_nama:
+              type: array
+              items:
+                type: string
+              example:
+                - "Nama pelanggan tidak boleh kosong."
+                - "Nama pelanggan tidak boleh lebih dari 150 karakter."
+            pelanggan_alamat:
+              type: array
+              items:
+                type: string
+              example:
+                - "Alamat pelanggan tidak boleh kosong."
+                - "Alamat pelanggan tidak boleh lebih dari 200 karakter."
+            pelanggan_notelp:
+              type: array
+              items:
+                type: string
+              example:
+                - "Nomor telepon tidak boleh kosong."
+                - "Nomor telepon harus berisi 10-13 digit angka."
+            pelanggan_email:
+              type: array
+              items:
+                type: string
+              example:
+                - "Format email tidak valid."
+                - "Email tidak boleh lebih dari 100 karakter."
+            pelanggan_data_jenis:
+              type: array
+              items:
+                type: string
+              example:
+                - "Jenis data harus berupa KTP atau SIM."
+                - "Jenis file data pelanggan harus ada saat membuat."
+            pelanggan_data_file:
+              type: array
+              items:
+                type: string
+              example:
+                - "File harus ada saat membuat jenis data pelanggan."
+                - "Invalid file format. hanya PNG, JPG, JPEG, WEBP, and AVIF yang diperbolehkan."
+                - "File terlalu besar. Maximum size is 5MB"
+      
+    DataPelanggan:
+      type: object
+      properties:
+        pelanggan_data_id:
+          type: integer
+          example: 3
+        pelanggan_data_pelanggan_id:
+          type: integer
+          example: 3
+        pelanggan_data_jenis:
+          type: string
+          example: KTP
+        pelanggan_data_file:
+          type: string
+          example: https://vocaloid.jp/miku.jpg
+    DataPelangganCreateRequest:
+      type: object
+      properties:
+        pelanggan_data_pelanggan_id:
+          type: integer
+          example: 3
+        pelanggan_data_jenis:
+          type: string
+          enum: 
+            - KTP
+            - SIM
+          example: KTP
+        pelanggan_data_file:
+          type: string
+          format: binary
+          enum: 
+            - .jpg
+            - .jpeg
+            - .png
+            - .webp
+            - .avif
+          example: miku.jpg
+      required:
+        - pelanggan_data_pelanggan_id
+        - pelanggan_data_jenis
+        - pelanggan_data_file
+    DataPelangganUpdateRequest:
+      type: object
+      properties:
+        pelanggan_data_pelanggan_id:
+          type: integer
+          example: 3
+        pelanggan_data_jenis:
+          type: string
+          enum: 
+            - KTP
+            - SIM
+          example: KTP
+        pelanggan_data_file:
+          type: string
+          format: binary
+          enum: 
+            - .jpg
+            - .jpeg
+            - .png
+            - .webp
+            - .avif
+          example: miku.jpg
+    CreateDataPelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success membuat data pelanggan baru"
+        data:
+          $ref: "#/components/schemas/DataPelanggan"
+    GetAllDataPelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan semua data pelanggan"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataPelanggan"
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    GetOneDataPelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan data pelanggan"
+        data:
+          type: object
+          properties:
+            pelanggan_data_id:
+              type: integer
+              example: 3
+            pelanggan_data_pelanggan_id:
+              type: integer
+              example: 3
+            pelanggan_data_jenis:
+              type: string
+              example: KTP
+            pelanggan_data_file:
+              type: string
+              example: https://vocaloid.jp/miku.jpg
+            pelanggan:
+              type: object
+              properties:
+                pelanggan_id:
+                  type: integer
+                  example: 2
+                pelanggan_nama:
+                  type: string
+                  example: Hatsune Miku
+                pelanggan_alamat:
+                  type: string
+                  example: Jepang
+                pelanggan_notelp:
+                  type: string
+                  example: 123456789
+                pelanggan_email:
+                  type: string
+                  example: miku@vocaloid.jp
+    UpdateDataPelangganResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mengupdate data pelanggan"
+        data:
+          $ref: "#/components/schemas/DataPelanggan"
+    DataPelangganErrorValidation:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation error"
+        errors:
+          type: object
+          properties:
+            pelanggan_data_pelanggan_id:
+              type: array
+              items:
+                type: string
+              example:
+                - "ID pelanggan harus berupa angka bulat."
+                - "Pelanggan dengan id 3 tidak ada."
+            pelanggan_data_jenis:
+              type: array
+              items:
+                type: string
+              example:
+                - "Jenis data harus berupa KTP atau SIM."
+                - "Jenis file data pelanggan harus ada saat membuat."
+            pelanggan_data_file:
+              type: array
+              items:
+                type: string
+              example:
+                - "File harus ada saat membuat jenis data pelanggan."
+                - "Invalid file format. hanya PNG, JPG, JPEG, WEBP, and AVIF yang diperbolehkan."
+                - "File terlalu besar. Maximum size is 5MB"
+      
+    Penyewaan:
+      type: object
+      properties:
+        penyewaan_id:
+          type: integer
+          example: 1
+        penyewaan_pelanggan_id:
+          type: integer
+          example: 3
+        penyewaan_tglsewa:
+          type: string
+          format: date
+          example: 2025-02-07T01:10:48.670Z
+        penyewaan_tglkembali:
+          type: string
+          format: date
+          example: 2025-02-07T01:10:48.670Z
+        penyewaan_sttspembayaran:
+          type: string
+          example: LUNAS
+        penyewaan_sttskembali:
+          type: string
+          example: SUDAH_KEMBALI
+        penyewaan_totalharga:
+          type: integer
+          example: 750000
+        _count:
+          type: object
+          properties:
+            penyewaan_detail:
+              type: integer
+              example: 1
+        pelanggan:
+          type: object
+          properties:
+            pelanggan_id:
+              type: integer
+              example: 3
+            pelanggan_nama:
+              type: string
+              example: Hatsune Miku
+    DataPenyewaanCreateRequest:
+      type: object
+      properties:
+        penyewaan_pelanggan_id:
+          type: integer
+          example: 3
+        penyewaan_tglkembali:
+          type: string
+          format: date
+          example: 2025-02-10T00:00:00.000Z
+        penyewaan_sttspembayaran:
+          type: string
+          enum:
+            - BELUM_DIBAYAR
+            - LUNAS
+            - DP
+          example: BELUM_DIBAYAR
+          default: BELUM_DIBAYAR
+        penyewaan_sttskembali:
+          type: string
+          enum:
+            - BELUM_KEMBALI
+            - SUDAH_KEMBALI
+          example: BELUM_KEMBALI
+          default: BELUM_KEMBALI
+        daftar_alat:
+          type: array
+          items:
+            type: object
+            properties:
+              alat_id:
+                type: integer
+                example: 4
+              jumlah:
+                type: integer
+                example: 999
+            required:
+              - alat_id
+              - jumlah
+      required:
+        - penyewaan_pelanggan_id
+        - penyewaan_tglkembali
+        - penyewaan_sttspembayaran
+        - penyewaan_sttskembali
+    DataPenyewaanUpdateRequest:
+      type: object
+      properties:
+        penyewaan_pelanggan_id:
+          type: integer
+          example: 3
+        penyewaan_tglkembali:
+          type: string
+          format: date
+          example: 2025-02-10T00:00:00.000Z
+        penyewaan_sttspembayaran:
+          type: string
+          enum:
+            - BELUM_DIBAYAR
+            - LUNAS
+            - DP
+          example: BELUM_DIBAYAR
+          default: BELUM_DIBAYAR
+        penyewaan_sttskembali:
+          type: string
+          enum:
+            - BELUM_KEMBALI
+            - SUDAH_KEMBALI
+          example: BELUM_KEMBALI
+          default: BELUM_KEMBALI
+        daftar_alat:
+          type: array
+          items:
+            type: object
+            properties:
+              alat_id:
+                type: integer
+                example: 4
+              jumlah:
+                type: integer
+                example: 999
+            required:
+              - alat_id
+              - jumlah
+    CreatePenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success membuat penyewaan baru"
+        data:
+          $ref: "#/components/schemas/Penyewaan"
+    GetAllPenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan semua penyewaan"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Penyewaan"
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    GetOnePenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan penyewaan"
+        data:
+          type: object
+          properties:
+            penyewaan_id:
+              type: integer
+              example: 3
+            penyewaan_pelanggan_id:
+              type: integer
+              example: 1
+            penyewaan_tglsewa:
+              type: string
+              format: date-time
+              example: "2025-02-07T01:10:48.670Z"
+            penyewaan_tglkembali:
+              type: string
+              format: date-time
+              example: "2025-02-10T00:00:00.000Z"
+            penyewaan_sttspembayaran:
+              type: string
+              example: "LUNAS"
+            penyewaan_sttskembali:
+              type: string
+              example: "SUDAH_KEMBALI"
+            penyewaan_totalharga:
+              type: integer
+              example: 750000
+            penyewaan_detail:
+              type: array
+              items:
+                type: object
+                properties:
+                  penyewaan_detail_id:
+                    type: integer
+                    example: 3
+                  penyewaan_detail_penyewaan_id:
+                    type: integer
+                    example: 2
+                  penyewaan_detail_alat_id:
+                    type: integer
+                    example: 3
+                  penyewaan_detail_jumlah:
+                    type: integer
+                    example: 999
+                  penyewaan_detail_subharga:
+                    type: integer
+                    example: 12345
+                  alat:
+                    type: object
+                    properties:
+                      alat_id:
+                        type: integer
+                        example: 6
+                      alat_kategori_id:
+                        type: integer
+                        example: 1
+                      alat_nama:
+                        type: string
+                        example: "HP"
+                      alat_deskripsi:
+                        type: string
+                        example: "Alat untuk menonton TV"
+                      alat_hargaperhari:
+                        type: integer
+                        example: 30000
+                      alat_stok:
+                        type: integer
+                        example: 12
+                      kategori:
+                        $ref: "#/components/schemas/Kategori"
+            pelanggan:
+              $ref: "#/components/schemas/Pelanggan"
+            _count:
+              type: object
+              properties:
+                penyewaan_detail:
+                  type: integer
+                  example: 1
+    UpdatePenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mengupdate penyewaan"
+        data:
+          $ref: "#/components/schemas/Penyewaan"
+    PenyewaanErrorValidation:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation error"
+        errors:
+          type: object
+          properties:
+            penyewaan_pelanggan_id:
+              type: array
+              items:
+                type: string
+              example:
+                - "ID pelanggan harus berupa angka bulat."
+                - "Pelanggan dengan id 3 tidak ada."
+            penyewaan_tglkembali:
+              type: array
+              items:
+                type: string
+              example:
+                - "Tanggal kembali harus berupa format tanggal yang valid."
+                - "Format tanggal kembali harus dalam format ISO."
+            penyewaan_sttspembayaran:
+              type: array
+              items:
+                type: string
+              example:
+                - "Status pembayaran harus salah satu dari: BELUM_DIBAYAR, LUNAS, atau DP."
+            penyewaan_sttskembali:
+              type: array
+              items:
+                type: string
+              example:
+                - "Status kembali harus salah satu dari: BELUM_KEMBALI atau SUDAH_KEMBALI."
+            daftar_alat:
+              type: array
+              items:
+                type: object
+                properties:
+                  alat_id:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "ID alat harus berupa angka bulat."
+                  jumlah:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "Jumlah harus berupa angka bulat."
+              example:
+                - "ID alat berikut tidak ditemukan: 2, 4, 8."
+      
+    DetailPenyewaan:
+      type: object
+      properties:
+        penyewaan_detail_id:
+          type: integer
+          example: 3
+        penyewaan_detail_penyewaan_id:
+          type: integer
+          example: 2
+        penyewaan_detail_alat_id:
+          type: integer
+          example: 3
+        penyewaan_detail_jumlah:
+          type: integer
+          example: 999
+        penyewaan_detail_subharga:
+          type: integer
+          example: 12345
+        alat:
+          type: object
+          properties:
+            alat_id:
+              type: integer
+              example: 2
+            alat_nama:
+              type: string
+              example: Mic
+            alat_hargaperhari:
+              type: integer
+              example: 12345
+            kategori:
+              type: object
+              properties:
+                kategori_id:
+                  type: integer
+                  example: 3
+                kategori_nama:
+                  type: string
+                  example: Elektronik
+    DetailPenyewaanCreateRequest:
+      type: object
+      properties:
+        penyewaan_detail_penyewaan_id:
+          type: integer
+          example: 2
+        penyewaan_detail_alat_id:
+          type: integer
+          example: 3
+        penyewaan_detail_jumlah:
+          type: integer
+          example: 999
+      required:
+        - penyewaan_detail_penyewaan_id
+        - penyewaan_detail_alat_id
+        - penyewaan_detail_jumlah
+    DetailPenyewaanUpdateRequest:
+      type: object
+      properties:
+        penyewaan_detail_penyewaan_id:
+          type: integer
+          example: 2
+        penyewaan_detail_alat_id:
+          type: integer
+          example: 3
+        penyewaan_detail_jumlah:
+          type: integer
+          example: 999
+    CreateDetailPenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success membuat detail penyewaan baru"
+        data:
+          $ref: "#/components/schemas/DetailPenyewaan"
+    GetAllDetailPenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan semua detail penyewaan"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DetailPenyewaan"
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    GetOneDetailPenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mendapatkan detail penyewaan"
+        data:
+          type: object
+          properties:
+            penyewaan_detail_id:
+              type: integer
+              example: 3
+            penyewaan_detail_penyewaan_id:
+              type: integer
+              example: 2
+            penyewaan_detail_alat_id:
+              type: integer
+              example: 3
+            penyewaan_detail_jumlah:
+              type: integer
+              example: 999
+            penyewaan_detail_subharga:
+              type: integer
+              example: 12345
+            penyewaan:
+              $ref: "#/components/schemas/Penyewaan"
+            alat:
+              type: object
+              properties:
+                alat_id:
+                  type: integer
+                  example: 6
+                alat_kategori_id:
+                  type: integer
+                  example: 1
+                alat_nama:
+                  type: string
+                  example: "HP"
+                alat_deskripsi:
+                  type: string
+                  example: "Alat untuk menonton TV"
+                alat_hargaperhari:
+                  type: integer
+                  example: 30000
+                alat_stok:
+                  type: integer
+                  example: 12
+                kategori:
+                  $ref: "#/components/schemas/Kategori"
+    UpdateDetailPenyewaanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Success mengupdate deatil penyewaan"
+        data:
+          $ref: "#/components/schemas/DetailPenyewaan"
+    DetailPenyewaanErrorValidation:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Validation error"
+        errors:
+          type: object
+          properties:
+            penyewaan_detail_penyewaan_id:
+              type: array
+              items:
+                type: string
+              example:
+                - "ID penyewaan harus berupa angka bulat."
+                - "Penyewaan dengan id 3 tidak ada."
+            penyewaan_detail_alat_id:
+              type: array
+              items:
+                type: string
+              example:
+                - "ID alat harus berupa angka bulat."
+                - "Alat dengan id 3 tidak ada."
+            penyewaan_detail_jumlah:
+              type: array
+              items:
+                type: string
+              example:
+                - "Jumlah harus berupa angka bulat."
+      
+  requestBodies:
+    CreateKategori:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/KategoriCreateRequest"
+    UpdateKategori:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/KategoriUpdateRequest"
+    CreateAlat:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AlatCreateRequest"
+    UpdateAlat:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AlatUpdateRequest"
+    CreatePelanggan:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "#/components/schemas/PelangganCreateRequest"
+    UpdatePelanggan:
+      required: false
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "#/components/schemas/PelangganUpdateRequest"
+    CreateDataPelanggan:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "#/components/schemas/DataPelangganCreateRequest"
+    UpdateDataPelanggan:
+      required: false
+      content:
+        multipart/form-data:
+          schema:
+            $ref: "#/components/schemas/DataPelangganUpdateRequest"
+    CreatePenyewaan:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DataPenyewaanCreateRequest"
+    UpdatePenyewaan:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DataPenyewaanUpdateRequest"
+    CreateDetailPenyewaan:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DetailPenyewaanCreateRequest"
+    UpdateDetailPenyewaan:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DetailPenyewaanUpdateRequest"
+      
+  responses:
+    KategoriAll:
+      description: Berhasil mendapatkan semua kategori
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetAllKategoriResponse'
+    KategoriById:
+      description: Success mendapatkan kategori
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetOneKategoriResponse'
+    KategoriCreated:
+      description: Success menambah kategori baru
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateKategoriResponse'
+    KategoriUpdated:
+      description: Success mengupdated kategori
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateKategoriResponse'
+    KategoriError:
+      description: Data yang dikirim tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/KategoriErrorValidation'
+      
+    AlatAll:
+      description: Berhasil mendapatkan semua alat
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetAllAlatResponse'
+    AlatById:
+      description: Success mendapatkan alat
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetOneAlatResponse'
+    AlatCreated:
+      description: Success menambah alat baru
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateAlatResponse'
+    AlatUpdated:
+      description: Success mengupdated alat
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateAlatResponse'
+    AlatError:
+      description: Data yang dikirim tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AlatErrorValidation'
+      
+    PelangganAll:
+      description: Berhasil mendapatkan semua pelanggan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetAllPelangganResponse'
+    PelangganById:
+      description: Success mendapatkan pelanggan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetOnePelangganResponse'
+    PelangganCreated:
+      description: Success menambah pelanggan baru
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreatePelangganResponse'
+    PelangganUpdated:
+      description: Success mengupdated pelanggan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePelangganResponse'
+    PelangganError:
+      description: Data yang dikirim tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PelangganErrorValidation'
+      
+    DataPelangganAll:
+      description: Berhasil mendapatkan semua data pelanggan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetAllDataPelangganResponse'
+    DataPelangganById:
+      description: Success mendapatkan data pelanggan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetOneDataPelangganResponse'
+    DataPelangganCreated:
+      description: Success menambah data pelanggan baru
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateDataPelangganResponse'
+    DataPelangganUpdated:
+      description: Success mengupdated data pelanggan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateDataPelangganResponse'
+    DataPelangganError:
+      description: Data yang dikirim tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataPelangganErrorValidation'
+    
+    PenyewaanAll:
+      description: Berhasil mendapatkan semua penyewaan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetAllPenyewaanResponse'
+    PenyewaanById:
+      description: Success mendapatkan penyewaan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetOnePenyewaanResponse'
+    PenyewaanCreated:
+      description: Success menambah penyewaan baru
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreatePenyewaanResponse'
+    PenyewaanUpdated:
+      description: Success mengupdated data pelanggan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatePenyewaanResponse'
+    PenyewaanError:
+      description: Data yang dikirim tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PenyewaanErrorValidation'
+      
+    DetailPenyewaanAll:
+      description: Berhasil mendapatkan semua detail penyewaan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetAllDetailPenyewaanResponse'
+    DetailPenyewaanById:
+      description: Success mendapatkan detail penyewaan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetOneDetailPenyewaanResponse'
+    DetailPenyewaanCreated:
+      description: Success menambah detail penyewaan baru
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateDetailPenyewaanResponse'
+    DetailPenyewaanUpdated:
+      description: Success mengupdated detail penyewaan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateDetailPenyewaanResponse'
+    DetailPenyewaanError:
+      description: Data yang dikirim tidak valid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DetailPenyewaanErrorValidation'
+      
+    InternalServerError:
+      description: Terjadi kesalahan pada server
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Internal Server Error"
+    UnauthorizedError:
+      description: Pengguna tidak memiliki izin untuk mengakses resource ini
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Unauthorized"
+              errors:
+                type: array
+                items:
+                  type: string
+                example:
+                  - "Missing access token"
+                  - "Expired access token"
+    NotFoundError:
+      description: Resource yang dicari tidak ditemukan
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Resource tidak ditemukan"
+    UnsupportedMediaType:
+      description: Type file yang dikirim tidak sesuai ketentuan
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Unsupported Media Type"
+              errors:
+                type: object
+                properties:
+                  pelanggan_data_file:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "Invalid file format. Only PNG, JPG, JPEG, WEBP, and AVIF yang diperbolehkan"
+    PayloadTooLarge:
+      description: Data yang kirim terlalu besar
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: "Payload Too Large"
+              errors:
+                type: object
+                properties:
+                  pelanggan_data_file:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "File yang dikirim terlalu besar. Maximum size 5MB"

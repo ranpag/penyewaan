@@ -14,9 +14,9 @@ const existingCustomer = async (value: string | number, _helper: Joi.ExternalHel
             [
                 {
                     message: `Pelanggan dengan id ${customerId} tidak ada`,
-                    path: ["pelanggan_data_pelanggan_id"],
+                    path: ["body", "penyewaan_pelanggan_id"],
                     type: "existing",
-                    context: { value }
+                    context: { label: "penyewaan_pelanggan_id", key: "penyewaan_pelanggan_id" }
                 }
             ],
             value
@@ -42,9 +42,9 @@ const existingTools = async (toolIds: number[]) => {
             [
                 {
                     message: `ID alat berikut tidak ditemukan: ${missingToolIds.join(", ")}`,
-                    path: ["pelanggan_data_pelanggan_id"],
+                    path: ["body", "daftar_alat", "alat_id"],
                     type: "existing",
-                    context: { toolIds }
+                    context: { label: "alat_id", key: "alat_id" }
                 }
             ],
             toolIds
@@ -67,6 +67,7 @@ const createRental = {
         .keys({
             penyewaan_pelanggan_id: Joi.number().integer().positive().required().external(existingCustomer).messages({
                 "number.base": "ID pelanggan harus berupa angka.",
+                "number.integer": "ID pelanggan harus berupa angka bulat.",
                 "number.positive": "ID pelanggan harus bernilai positif.",
                 "any.required": "ID pelanggan wajib diisi."
             }),
@@ -86,11 +87,13 @@ const createRental = {
                     Joi.object().keys({
                         alat_id: Joi.number().integer().positive().required().messages({
                             "number.base": "ID alat harus berupa angka.",
+                            "number.integer": "ID alat harus berupa angka bulat.",
                             "number.positive": "ID alat harus bernilai positif.",
                             "any.required": "ID alat wajib diisi."
                         }),
                         jumlah: Joi.number().integer().positive().min(1).required().messages({
                             "number.base": "Jumlah harus berupa angka.",
+                            "number.integer": "Jumlah harus berupa angka bulat.",
                             "number.positive": "Jumlah harus bernilai positif.",
                             "number.min": "Jumlah harus minimal 1.",
                             "any.required": "Jumlah alat wajib diisi."
@@ -112,6 +115,7 @@ const updateRental = {
         .keys({
             penyewaan_pelanggan_id: Joi.number().integer().positive().external(existingCustomer).messages({
                 "number.base": "ID pelanggan harus berupa angka.",
+                "number.integer": "ID pelanggan harus berupa angka bulat.",
                 "number.positive": "ID pelanggan harus bernilai positif."
             }),
             penyewaan_tglkembali: Joi.date().iso().messages({
@@ -129,11 +133,13 @@ const updateRental = {
                     Joi.object().keys({
                         alat_id: Joi.number().integer().positive().required().messages({
                             "number.base": "ID alat harus berupa angka.",
+                            "number.integer": "ID alat harus berupa angka bulat.",
                             "number.positive": "ID alat harus bernilai positif.",
                             "any.required": "ID alat wajib diisi."
                         }),
                         jumlah: Joi.number().integer().positive().min(1).required().messages({
                             "number.base": "Jumlah harus berupa angka.",
+                            "number.integer": "Jumlah harus berupa angka bulat.",
                             "number.positive": "Jumlah harus bernilai positif.",
                             "number.min": "Jumlah harus minimal 1.",
                             "any.required": "Jumlah alat wajib diisi."

@@ -4,10 +4,11 @@ import tokenService from "@services/tokenService";
 import errorAPI from "@utils/errorAPI";
 import { Request, Response } from "express";
 import prisma from "~/src/database/prisma";
+import env from "~/configs/env";
 
 const signup = async (req: Request, res: Response) => {
     try {
-        const hashedPassword = await bcrypt.hash(req.body.admin_password, 15);
+        const hashedPassword = await bcrypt.hash(req.body.admin_password, env.COST_FACTOR);
 
         const admin = await prisma.admin.create({
             data: {
@@ -47,7 +48,7 @@ const signin = async (req: Request, res: Response) => {
         if (!isPasswordValid) throw new errorAPI("Unauthorized", 401, ["Invalid credentials"]);
 
         const adminData = {
-            id: admin.admin_id,
+            admin_id: admin.admin_id,
             admin_username: admin.admin_username
         };
 
@@ -80,7 +81,7 @@ const refresh = async (req: Request, res: Response) => {
         const payloadRefreshToken = (await tokenService.verifyRefreshToken(refreshToken)) as Record<string, string | number>;
 
         // eslint-disable-next-line no-unused-vars
-        const { exp, ...cleanPayload } = payloadRefreshToken;
+        const { exp, iat, ...cleanPayload } = payloadRefreshToken;
 
         const accessToken = tokenService.generateAccessToken(cleanPayload);
 
@@ -100,4 +101,24 @@ const refresh = async (req: Request, res: Response) => {
     }
 };
 
-export default { signup, signin, refresh };
+const changePassword = async (req: Request, res: Response) => {
+    try {
+        const adminChangePassword = await prisma.admin.update({
+            where: { admin_id: Number(req.user?.admin_id) },
+            data: { admin_password: req.body.new_password },
+            omit: { admin_password: true }
+        });
+
+        return res.status(200).json({
+            success: true,
+            statusCode: 200,
+            message: "Password berhasil di ganti",
+            data: adminChangePassword
+        });
+    } catch (err) {
+        logger.error("Error during change:" + err);
+        throw err;
+    }
+};
+
+export default { signup, signin, refresh, changePassword };

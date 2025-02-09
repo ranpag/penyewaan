@@ -11,9 +11,9 @@ const uniqueUsername = async (value: string, _helper: Joi.ExternalHelpers) => {
             [
                 {
                     message: "Admin username sudah ada",
-                    path: ["admin_username"],
+                    path: ["body", "admin_username"],
                     type: "unique",
-                    context: { value }
+                    context: { label: "admin_username", key: "admin_username" }
                 }
             ],
             value
@@ -78,4 +78,37 @@ const signin = {
         .options({ stripUnknown: true })
 };
 
-export default { signup, signin };
+const changePassword = {
+    body: Joi.object()
+        .keys({
+            new_password: Joi.string()
+                .trim()
+                .min(8)
+                .max(255)
+                .required()
+                .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+                .messages({
+                    "string.base": "Password baru harus berupa teks",
+                    "string.empty": "Password baru tidak boleh kosong",
+                    "string.min": "Password baru harus memiliki minimal 8 karakter",
+                    "string.max": "Password baru tidak boleh lebih dari 255 karakter",
+                    "any.required": "Password baru wajib diisi",
+                    "string.pattern.base":
+                        "Password baru harus mengandung minimal satu huruf besar, satu huruf kecil, satu angka, dan satu karakter spesial (@$!%*?&)"
+                }),
+            confirm_password: Joi.string()
+                .trim()
+                .required()
+                .valid(Joi.ref("new_password"))
+                .messages({
+                    "string.base": "Konfirmasi password harus berupa teks.",
+                    "string.empty": "Konfirmasi password tidak boleh kosong.",
+                    "any.required": "Konfirmasi password wajib diisi.",
+                    "any.only": "Konfirmasi password harus sama dengan password baru."
+                })
+                .strip()
+        })
+        .options({ stripUnknown: true })
+};
+
+export default { signup, signin, changePassword };

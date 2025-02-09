@@ -11,9 +11,9 @@ const uniqueCategoryName = async (value: string, _helper: Joi.ExternalHelpers) =
             [
                 {
                     message: "Nama kategori sudah ada",
-                    path: ["kategori_nama"],
+                    path: ["body", "kategori_nama"],
                     type: "unique",
-                    context: { value }
+                    context: { label: "kategori_nama", key: "kategori_nama" }
                 }
             ],
             value

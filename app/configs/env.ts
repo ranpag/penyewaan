@@ -10,6 +10,8 @@ const envValidate = Joi.object()
         HOST: Joi.string().allow("").empty("").default("127.0.0.1"),
         PORT: Joi.number().allow("").empty("").default(3000),
 
+        COST_FACTOR: Joi.number().allow("").empty(""),
+
         DATABASE_URL: Joi.string().required(),
         FRONTEND_URL: Joi.string().allow("").empty("").default("http://localhost:5137"),
 
@@ -50,6 +52,8 @@ export default {
 
     DATABASE_URL: env.DATABASE_URL,
     FRONTEND_URL: env.FRONTEND_URL,
+
+    COST_FACTOR: Number(env.COST_FACTOR),
 
     CACHE_DRIVER: env.CACHE_DRIVER,
     CACHE_PREFIX: env.CACHE_PREFIX,

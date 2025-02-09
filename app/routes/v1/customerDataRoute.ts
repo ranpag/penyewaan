@@ -18,7 +18,7 @@ router.get(
 router.post(
     "/",
     middlewareHandler("auth"),
-    loadFileInMemory("pelanggan_data_file"),
+    loadFileInMemory("pelanggan_data_file", customerDataValidation.customerDataValidation),
     sanitizeAndValidate(customerDataValidation.createCustomerData),
     uploadFileToS3("customerData", "pelanggan_data_file"),
     control(customerDataController.create)

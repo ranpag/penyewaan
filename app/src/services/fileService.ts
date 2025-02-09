@@ -57,7 +57,9 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallb
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        const error = new errorAPI("Invalid file format. Only PNG, JPG, JPEG, WEBP, and AVIF are allowed.", 415);
+        const error = new errorAPI("Unsupported Media Type", 415, {
+            pelanggan_data_file: ["Invalid file format. Only PNG, JPG, JPEG, WEBP, and AVIF yang diperbolehkan."]
+        });
         cb(error);
     }
 };
@@ -73,7 +75,11 @@ export const loadFileInMemory = (fieldName: string, moreValidation?: Function) =
         memoryUpload.fields([{ name: fieldName, maxCount: 1 }])(req, res, (err) => {
             if (err instanceof multer.MulterError) {
                 if (err.code === "LIMIT_FILE_SIZE") {
-                    return reject(new errorAPI("File too large. Maximum size is 5MB.", 413));
+                    return reject(
+                        new errorAPI("Payload Too Large.", 413, {
+                            pelanggan_data_file: ["File yang dikirim terlalu besar. Maximum size 5MB."]
+                        })
+                    );
                 }
             } else if (err) {
                 return reject(err);

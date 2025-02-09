@@ -26,9 +26,9 @@ const verifyAccessToken = async (accessToken: string) => {
     } catch (err) {
         if (err instanceof Error) {
             if (err.name === "TokenExpiredError") {
-                throw new errorAPI("Access expired", 401);
+                throw new errorAPI("Unauthorized", 401, ["Access expired"]);
             } else if (err.name === "JsonWebTokenError") {
-                throw new errorAPI("Access is invalid", 401);
+                throw new errorAPI("Unauthorized", 401, ["Access is invalid"]);
             }
             throw err;
         }
@@ -53,9 +53,9 @@ const verifyRefreshToken = async (refreshToken: string) => {
     } catch (err) {
         if (err instanceof Error) {
             if (err.name === "TokenExpiredError") {
-                throw new errorAPI("Refresh token expired", 401);
+                throw new errorAPI("Unauthorized", 401, ["Refresh token expired"]);
             } else if (err.name === "JsonWebTokenError") {
-                throw new errorAPI("Refresh token is invalid", 401);
+                throw new errorAPI("Unauthorized", 401, ["Refresh token is invalid"]);
             }
             throw err;
         }

@@ -9,7 +9,7 @@ export const checkNaN = (args: Record<string, unknown>) => {
 
     Object.values(args).forEach((value) => {
         if (isNaN(Number(value))) {
-            throw new errorAPI("Beberapa value bukan angka", 400);
+            throw new errorAPI("Validation Error", 400, ["Beberapa value bukan angka"]);
         }
     });
 

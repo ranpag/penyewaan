@@ -8,8 +8,9 @@ import { Prisma } from "@prisma/client";
 const index = async (req: Request, res: Response) => {
     try {
         const categories = await prisma.kategori.findMany({
+            include: { _count: true },
             take: 10,
-            skip: parseInt(req.query.page as string) * 10 || 0
+            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
         });
 
         const totalAllCategories = await prisma.kategori.count();
@@ -22,7 +23,7 @@ const index = async (req: Request, res: Response) => {
                 totalItem: categories.length,
                 totalData: totalAllCategories,
                 totalPage:
-                    categories.length > 10
+                    totalAllCategories > 10
                         ? Math.floor(totalAllCategories / categories.length) + 1
                         : Math.floor(totalAllCategories / categories.length)
             }
@@ -43,7 +44,7 @@ const selected = async (req: Request, res: Response) => {
             where: {
                 kategori_id: resultNumberParams.categoryId
             },
-            include: { alat: true }
+            include: { _count: true }
         });
 
         if (!category) throw new errorAPI("Kategori tidak ditemukan", 404);
@@ -62,7 +63,8 @@ const selected = async (req: Request, res: Response) => {
 const create = async (req: Request, res: Response) => {
     try {
         const category = await prisma.kategori.create({
-            data: { kategori_nama: req.body.kategori_nama }
+            data: { kategori_nama: req.body.kategori_nama },
+            include: { _count: true }
         });
 
         return res.status(201).json({
@@ -93,7 +95,8 @@ const update = async (req: Request, res: Response) => {
 
         const category = await prisma.kategori.update({
             data: { kategori_nama: req.body.kategori_nama },
-            where: { kategori_id: resultNumberParams.categoryId }
+            where: { kategori_id: resultNumberParams.categoryId },
+            include: { _count: true }
         });
 
         return res.status(200).json({

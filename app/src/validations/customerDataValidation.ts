@@ -16,9 +16,9 @@ const existingCustomer = async (value: string | number, _helper: Joi.ExternalHel
             [
                 {
                     message: `Pelanggan dengan id ${customerId} tidak ada`,
-                    path: ["pelanggan_data_pelanggan_id"],
+                    path: ["body", "pelanggan_data_pelanggan_id"],
                     type: "existing",
-                    context: { value }
+                    context: { label: "pelanggan_data_pelanggan_id", key: "pelanggan_data_pelanggan_id" }
                 }
             ],
             value
@@ -27,12 +27,12 @@ const existingCustomer = async (value: string | number, _helper: Joi.ExternalHel
     return value;
 };
 
-const customerDataValidation = (pelanggan_data_jenis: string, pelanggan_data_file?: Express.Multer.File[]) => {
+export const customerDataValidation = (pelanggan_data_jenis: string, pelanggan_data_file?: Express.Multer.File[]) => {
     if (pelanggan_data_jenis && (!pelanggan_data_file || pelanggan_data_file.length === 0)) {
-        throw new errorAPI("Validation error", 400, ["File harus ada jika Jenis data ada"]);
+        throw new errorAPI("Validation error", 400, { pelanggan_data_file: ["File harus ada saat membuat jenis data pelanggan"] });
     }
     if (!pelanggan_data_jenis && pelanggan_data_file && pelanggan_data_file.length > 0) {
-        throw new errorAPI("Validation error", 400, ["Jenis data harus ada jika File ada"]);
+        throw new errorAPI("Validation error", 400, { pelanggan_data_jenis: ["Jenis file data pelanggan harus ada saat membuat"] });
     }
 };
 

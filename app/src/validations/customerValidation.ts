@@ -1,7 +1,6 @@
 import Joi from "joi";
 import prisma from "~/src/database/prisma";
-import errorAPI from "@utils/errorAPI";
-import { Express } from "express";
+import { customerDataValidation } from "./customerDataValidation";
 
 const uniqueNoTelp = async (value: string, _helper: Joi.ExternalHelpers) => {
     const customerNoTelp = await prisma.pelanggan.findUnique({
@@ -13,9 +12,9 @@ const uniqueNoTelp = async (value: string, _helper: Joi.ExternalHelpers) => {
             [
                 {
                     message: "No Telp sudah digunakan",
-                    path: ["pelanggan_notelp"],
+                    path: ["body", "pelanggan_notelp"],
                     type: "unique",
-                    context: { value }
+                    context: { label: "pelanggan_notelp", key: "pelanggan_notelp" }
                 }
             ],
             value
@@ -34,24 +33,15 @@ const uniqueEmail = async (value: string, _helper: Joi.ExternalHelpers) => {
             [
                 {
                     message: "Email sudah digunakan",
-                    path: ["pelanggan_email"],
+                    path: ["body", "pelanggan_email"],
                     type: "unique",
-                    context: { value }
+                    context: { label: "pelanggan_email", key: "pelanggan_email" }
                 }
             ],
             value
         );
     }
     return value;
-};
-
-const customerDataValidation = (pelanggan_data_jenis: string, pelanggan_data_file?: Express.Multer.File[]) => {
-    if (pelanggan_data_jenis && (!pelanggan_data_file || pelanggan_data_file.length === 0)) {
-        throw new errorAPI("Validation error", 400, ['"body" contains [pelanggan_data_jenis] without its required peers [pelanggan_data_file]']);
-    }
-    if (!pelanggan_data_jenis && pelanggan_data_file && pelanggan_data_file.length > 0) {
-        throw new errorAPI("Validation error", 400, ['"body" contains [pelanggan_data_file] without its required peers [pelanggan_data_jenis]']);
-    }
 };
 
 const selectedCustomer = {

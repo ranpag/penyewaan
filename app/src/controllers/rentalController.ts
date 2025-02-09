@@ -10,11 +10,16 @@ const index = async (req: Request, res: Response) => {
     try {
         const rentals = await prisma.penyewaan.findMany({
             include: {
-                penyewaan_detail: true,
-                pelanggan: true
+                _count: true,
+                pelanggan: {
+                    select: {
+                        pelanggan_id: true,
+                        pelanggan_nama: true
+                    }
+                }
             },
             take: 10,
-            skip: parseInt(req.query.page as string) * 10 || 0
+            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
         });
 
         const totalRentals = await prisma.penyewaan.count();
@@ -26,7 +31,7 @@ const index = async (req: Request, res: Response) => {
             pagination: {
                 totalItem: rentals.length,
                 totalData: totalRentals,
-                totalPage: Math.floor(totalRentals / rentals.length)
+                totalPage: totalRentals > 10 ? Math.floor(totalRentals / rentals.length) + 1 : Math.floor(totalRentals / rentals.length)
             }
         });
     } catch (err) {
@@ -50,7 +55,11 @@ const selected = async (req: Request, res: Response) => {
                     include: {
                         alat: {
                             include: {
-                                kategori: true
+                                kategori: {
+                                    include: {
+                                        _count: true
+                                    }
+                                }
                             }
                         }
                     }
@@ -59,7 +68,8 @@ const selected = async (req: Request, res: Response) => {
                     include: {
                         pelanggan_data: true
                     }
-                }
+                },
+                _count: true
             }
         });
 
@@ -131,13 +141,19 @@ const create = async (req: Request, res: Response) => {
 
             await tx.penyewaan_detail.createMany({ data: rentalDetail });
 
-            const updateNewRental = await tx.penyewaan.update({
+            return await tx.penyewaan.update({
                 where: { penyewaan_id: newRental.penyewaan_id },
                 data: { penyewaan_totalharga: totalHarga },
-                include: { pelanggan: true, penyewaan_detail: true }
+                include: {
+                    _count: true,
+                    pelanggan: {
+                        select: {
+                            pelanggan_id: true,
+                            pelanggan_nama: true
+                        }
+                    }
+                }
             });
-
-            return updateNewRental;
         });
 
         return res.status(201).json({
@@ -150,7 +166,7 @@ const create = async (req: Request, res: Response) => {
 
         if (err instanceof Prisma.PrismaClientKnownRequestError) {
             if (err.code === "P2025") {
-                throw new errorAPI("Alat ada yang tidak ditemukan", 404);
+                throw new errorAPI("Penyewaan atau alat tidak ditemukan", 404);
             }
         }
 
@@ -228,7 +244,7 @@ const update = async (req: Request, res: Response) => {
                 totalHarga = existingRental.penyewaan_totalharga;
             }
 
-            const updatedRental = await tx.penyewaan.update({
+            return await tx.penyewaan.update({
                 where: { penyewaan_id: penyewaanId },
                 data: {
                     ...(penyewaan_tglkembali !== undefined && {
@@ -237,15 +253,21 @@ const update = async (req: Request, res: Response) => {
                     penyewaan_totalharga: totalHarga,
                     ...rentalData
                 },
-                include: { pelanggan: true, penyewaan_detail: true }
+                include: {
+                    _count: true,
+                    pelanggan: {
+                        select: {
+                            pelanggan_id: true,
+                            pelanggan_nama: true
+                        }
+                    }
+                }
             });
-
-            return updatedRental;
         });
 
         return res.status(200).json({
             success: true,
-            message: "Successfully updated rental",
+            message: "Success mengupdate penyewaan",
             data: result
         });
     } catch (err) {
@@ -253,7 +275,7 @@ const update = async (req: Request, res: Response) => {
 
         if (err instanceof Prisma.PrismaClientKnownRequestError) {
             if (err.code === "P2025") {
-                throw new errorAPI("Alat ada yang tidak ditemukan", 404);
+                throw new errorAPI("Penyewaan atau alat tidak ditemukan", 404);
             }
         }
 
@@ -314,4 +336,47 @@ const destroyNotRestoreToolsStock = async (req: Request, res: Response) => {
     }
 };
 
-export default { index, selected, create, update, destroy, destroyNotRestoreToolsStock };
+const clear = async (req: Request, res: Response) => {
+    const { rentalId } = req.params;
+    try {
+        const resultNumberParams = checkNaN({ rentalId });
+
+        const result = await prisma.$transaction(async (tx) => {
+            const clearRental = await tx.penyewaan.update({
+                where: {
+                    penyewaan_id: resultNumberParams.rentalId
+                },
+                data: {
+                    penyewaan_sttspembayaran: "LUNAS",
+                    penyewaan_sttskembali: "SUDAH_KEMBALI"
+                },
+                include: { penyewaan_detail: true }
+            });
+
+            clearRental.penyewaan_detail.forEach(async (item) => {
+                await tx.alat.update({
+                    where: { alat_id: item.penyewaan_detail_alat_id },
+                    data: { alat_stok: { increment: item.penyewaan_detail_jumlah } }
+                });
+            });
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Penyewaan selesai",
+            data: result
+        });
+    } catch (err) {
+        logger.error("Error during deleting alat: " + err);
+
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            if (err.code === "P2025") {
+                throw new errorAPI("Penyewaan tidak ditemukan", 404);
+            }
+        }
+
+        throw err;
+    }
+};
+
+export default { index, selected, create, update, destroy, destroyNotRestoreToolsStock, clear };

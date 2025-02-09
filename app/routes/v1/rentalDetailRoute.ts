@@ -34,7 +34,7 @@ router.delete(
     control(rentalDetailController.destroy)
 );
 router.delete(
-    "/:detailId/notrestoretoolstock",
+    "/:detailId/force",
     middlewareHandler("auth"),
     sanitizeAndValidate(rentalDetailValidation.destroyRentalDetail),
     control(rentalDetailController.destroyNotRestoreToolsStock)

@@ -10,5 +10,6 @@ const router = Router();
 router.post("/signup", middlewareHandler("guest"), sanitizeAndValidate(authValidation.signup), control(authController.signup));
 router.post("/signin", middlewareHandler("guest"), sanitizeAndValidate(authValidation.signin), control(authController.signin));
 router.get("/refresh", control(authController.refresh));
+router.post("/changepassword", middlewareHandler("auth"), sanitizeAndValidate(authValidation.changePassword), control(authController.changePassword));
 
 export default router;

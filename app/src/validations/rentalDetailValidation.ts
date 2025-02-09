@@ -14,9 +14,9 @@ const existingTool = async (value: string | number, _helper: Joi.ExternalHelpers
             [
                 {
                     message: `Alat dengan id ${toolId} tidak ada`,
-                    path: ["penyewaan_detail_alat_id"],
+                    path: ["body", "penyewaan_detail_penyewaan_id"],
                     type: "existing",
-                    context: { value }
+                    context: { label: "penyewaan_detail_penyewaan_id", key: "penyewaan_detail_penyewaan_id" }
                 }
             ],
             value
@@ -33,13 +33,13 @@ const existingRental = async (value: string | number, _helper: Joi.ExternalHelpe
     });
     if (!customer) {
         throw new Joi.ValidationError(
-            `Alat dengan id ${rentalId} tidak ada`,
+            `Penyewaan dengan id ${rentalId} tidak ada`,
             [
                 {
-                    message: `Alat dengan id ${rentalId} tidak ada`,
-                    path: ["penyewaan_detail_penyewaan_id"],
+                    message: `Penyewaan dengan id ${rentalId} tidak ada`,
+                    path: ["body", "penyewaan_detail_alat_id"],
                     type: "existing",
-                    context: { value }
+                    context: { label: "penyewaan_detail_alat_id", key: "penyewaan_detail_alat_id" }
                 }
             ],
             value

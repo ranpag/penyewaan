@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { PrismaClient } from "@prisma/client";
 import { logger } from "../utils/logger";
+import env from "~/configs/env";
 
 const prisma = new PrismaClient();
 
@@ -69,15 +70,15 @@ async function main() {
         data: [
             {
                 admin_username: "admin1",
-                admin_password: bcrypt.hashSync("Admin123$", 15)
+                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR)
             },
             {
                 admin_username: "admin2",
-                admin_password: bcrypt.hashSync("Admin123$", 15)
+                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR)
             },
             {
                 admin_username: "admin3",
-                admin_password: bcrypt.hashSync("Admin123$", 15)
+                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR)
             }
         ]
     });

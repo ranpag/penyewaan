@@ -9,22 +9,34 @@ const index = async (req: Request, res: Response) => {
     try {
         const tools = await prisma.alat.findMany({
             include: {
-                kategori: true
+                kategori: {
+                    include: { _count: true }
+                },
+                _count: true
             },
             take: 10,
-            skip: Number(req.query.page as string) * 10 || 0
+            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
         });
 
         const totalAllTools = await prisma.alat.count();
 
+        const newTools = tools.map((tool) => {
+            return {
+                ...tool,
+                _count: {
+                    total_disewa: tool._count.penyewaan_detail
+                }
+            };
+        });
+
         return res.status(200).json({
             success: true,
             message: "Success mendapatkan semua alat",
-            data: tools,
+            data: newTools,
             pagination: {
                 totalItem: tools.length,
                 totalAllData: totalAllTools,
-                totalPage: tools.length > 10 ? Math.floor(totalAllTools / tools.length) + 1 : Math.floor(totalAllTools / tools.length)
+                totalPage: totalAllTools > 10 ? Math.floor(totalAllTools / tools.length) + 1 : Math.floor(totalAllTools / tools.length)
             }
         });
     } catch (err) {
@@ -40,15 +52,27 @@ const selected = async (req: Request, res: Response) => {
         const resultNumberParams = checkNaN({ toolId });
         const tool = await prisma.alat.findUnique({
             where: { alat_id: resultNumberParams.toolId },
-            include: { kategori: true }
+            include: {
+                kategori: {
+                    include: { _count: true }
+                },
+                _count: true
+            }
         });
 
         if (!tool) throw new errorAPI("Alat not found", 404);
 
+        const newTool = {
+            ...tool,
+            _count: {
+                total_disewa: tool._count.penyewaan_detail
+            }
+        };
+
         return res.status(200).json({
             success: true,
             message: "Success mendapatkan alat",
-            data: tool
+            data: newTool
         });
     } catch (err) {
         logger.error("Error during fetching selected tool: " + err);
@@ -68,13 +92,26 @@ const create = async (req: Request, res: Response) => {
                 alat_hargaperhari: resultNumberBody.alat_hargaperhari,
                 alat_stok: resultNumberBody.alat_stok,
                 alat_kategori_id: resultNumberBody.alat_kategori_id
+            },
+            include: {
+                kategori: {
+                    include: { _count: true }
+                },
+                _count: true
             }
         });
+
+        const newTool = {
+            ...tool,
+            _count: {
+                total_disewa: tool._count.penyewaan_detail
+            }
+        };
 
         return res.status(201).json({
             success: true,
             message: "Success membuat alat baru",
-            data: tool
+            data: newTool
         });
     } catch (err) {
         logger.error("Error during creating tool: " + err);
@@ -95,13 +132,26 @@ const update = async (req: Request, res: Response) => {
                 ...stringValue,
                 ...resultNumberBody
             },
-            where: { alat_id: resultNumberParams.toolId }
+            where: { alat_id: resultNumberParams.toolId },
+            include: {
+                kategori: {
+                    include: { _count: true }
+                },
+                _count: true
+            }
         });
+
+        const newTool = {
+            ...tool,
+            _count: {
+                total_disewa: tool._count.penyewaan_detail
+            }
+        };
 
         return res.status(200).json({
             success: true,
             message: "Success mengupdate alat",
-            data: tool
+            data: newTool
         });
     } catch (err) {
         logger.error("Error during updating alat: " + err);

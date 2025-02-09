@@ -6,15 +6,10 @@ import { checkNaN } from "@utils/checkNaN";
 import { deleteFile } from "../services/fileService";
 
 const index = async (req: Request, res: Response) => {
-    let { page } = req.query;
-    if (!page) page = "1";
-    const take = 10;
     try {
-        const resultNumber = checkNaN({ page });
         const customerData = await prisma.pelanggan_data.findMany({
-            include: { pelanggan: true },
-            take,
-            skip: resultNumber.page * take - take || 0
+            take: 10,
+            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
         });
 
         const totalCustomerData = await prisma.pelanggan_data.count();
@@ -26,7 +21,10 @@ const index = async (req: Request, res: Response) => {
             pagination: {
                 totalItem: customerData.length,
                 totalData: totalCustomerData,
-                totalPage: Math.floor(totalCustomerData / customerData.length)
+                totalPage:
+                    totalCustomerData > 10
+                        ? Math.floor(totalCustomerData / customerData.length) + 1
+                        : Math.floor(totalCustomerData / customerData.length)
             }
         });
     } catch (err) {
