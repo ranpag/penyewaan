@@ -3,7 +3,6 @@
         "module": "ES6",
         "moduleResolution": "node",
         "target": "ESNext",
-        "rootDir": "./app",
         "outDir": "./build",
         "strict": true,
         "allowJs": true,
@@ -27,6 +26,6 @@
         "resolveFullPaths": true,
         "verbose": false
     },
-    "include": ["app/**/*", "app/global.d.ts"],
+    "include": ["app/**/*", "app/global.d.ts", "api/index.ts"],
     "exclude": ["node_modules", "build"]
 }
