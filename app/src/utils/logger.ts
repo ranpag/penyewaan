@@ -30,29 +30,16 @@ export const logger = winston.createLogger({
         winston.format.printf((info) => `[${[info.timestamp]}] [${info.level}] => ${info.message}`)
     ),
     transports: [
-        new winston.transports.File({
+        new winston.transports.Console({
             level: "http",
-            filename: "storages/logs/http.log",
-            maxsize: 10000000,
-            maxFiles: 10
         }),
-        new winston.transports.File({
+        new winston.transports.Console({
             level: "database",
-            filename: "storages/logs/database.log",
-            maxsize: 10000000,
-            maxFiles: 10
         }),
-        new winston.transports.File({
+        new winston.transports.Console({
             level: "error",
-            filename: "storages/logs/error.log",
-            maxsize: 10000000,
-            maxFiles: 10
         }),
-        new winston.transports.File({
-            filename: "storages/logs/combined.log",
-            maxsize: 10000000,
-            maxFiles: 10
-        }),
+        new winston.transports.Console(),
         new winston.transports.Console({
             format: winston.format.combine(winston.format.colorize({ all: true }))
         })

@@ -2,11 +2,12 @@ import express, { Application } from "express";
 import cors from "cors";
 import compression from "compression";
 import helmet from "helmet";
-import { logHTTP } from "@utils/logger";
+import { logger, logHTTP } from "@utils/logger";
 import routes from "~/routes/routes";
 import error from "@middlewares/error";
 import rateLimiter from "@middlewares/rateLimiter.js";
 import redocExpressMiddleware from "redoc-express";
+import env from "./configs/env";
 
 const app: Application = express();
 
@@ -35,8 +36,6 @@ app.use(express.static("public"));
 app.use(compression({ threshold: 1024 }));
 app.use(logHTTP);
 
-app.use("/openapi.yaml", express.static("./storages/openapi.yaml"));
-
 app.get(
     "/docs",
     redocExpressMiddleware({
@@ -51,5 +50,9 @@ app.use("/api", routes);
 // API error handler
 app.use(error.notFound);
 app.use(error.handler);
+
+app.listen(env.PORT, () => {
+    logger.info(`Server HTTP/1.1 berjalan di http://${env.HOST}:${env.PORT}`);
+});
 
 export default app;
