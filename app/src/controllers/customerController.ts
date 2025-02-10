@@ -82,6 +82,10 @@ const create = async (req: Request, res: Response) => {
                     }
                 },
                 ...onlyCustomer
+            },
+            include: {
+                pelanggan_data: true,
+                _count: true
             }
         });
 

@@ -84,15 +84,6 @@ const update = async (req: Request, res: Response) => {
     try {
         const resultNumberParams = checkNaN({ categoryId });
 
-        const existingCategory = await prisma.kategori.findUnique({
-            where: {
-                kategori_nama: req.body.kategori_nama,
-                NOT: { kategori_id: resultNumberParams.categoryId }
-            }
-        });
-
-        if (existingCategory) throw new errorAPI("Kategori nama sudah ada", 400);
-
         const category = await prisma.kategori.update({
             data: { kategori_nama: req.body.kategori_nama },
             where: { kategori_id: resultNumberParams.categoryId },

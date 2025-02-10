@@ -1,48 +1,5 @@
 import Joi from "joi";
-import prisma from "~/src/database/prisma";
 import { customerDataValidation } from "./customerDataValidation";
-
-const uniqueNoTelp = async (value: string, _helper: Joi.ExternalHelpers) => {
-    const customerNoTelp = await prisma.pelanggan.findUnique({
-        where: { pelanggan_notelp: value }
-    });
-    if (customerNoTelp) {
-        throw new Joi.ValidationError(
-            "No Telp sudah digunakan",
-            [
-                {
-                    message: "No Telp sudah digunakan",
-                    path: ["body", "pelanggan_notelp"],
-                    type: "unique",
-                    context: { label: "pelanggan_notelp", key: "pelanggan_notelp" }
-                }
-            ],
-            value
-        );
-    }
-    return value;
-};
-
-const uniqueEmail = async (value: string, _helper: Joi.ExternalHelpers) => {
-    const pelanggan = await prisma.pelanggan.findUnique({
-        where: { pelanggan_email: value }
-    });
-    if (pelanggan) {
-        throw new Joi.ValidationError(
-            "Email sudah digunakan",
-            [
-                {
-                    message: "Email sudah digunakan",
-                    path: ["body", "pelanggan_email"],
-                    type: "unique",
-                    context: { label: "pelanggan_email", key: "pelanggan_email" }
-                }
-            ],
-            value
-        );
-    }
-    return value;
-};
 
 const selectedCustomer = {
     params: Joi.object().keys({
@@ -71,14 +28,13 @@ const createCustomer = {
                 .trim()
                 .pattern(/^\d{10,13}$/)
                 .required()
-                .external(uniqueNoTelp)
                 .messages({
                     "string.base": "Nomor telepon harus berupa teks.",
                     "string.empty": "Nomor telepon tidak boleh kosong.",
                     "string.pattern.base": "Nomor telepon harus berisi 10-13 digit angka.",
                     "any.required": "Nomor telepon wajib diisi."
                 }),
-            pelanggan_email: Joi.string().trim().email().max(100).required().external(uniqueEmail).messages({
+            pelanggan_email: Joi.string().trim().email().max(100).required().messages({
                 "string.base": "Email pelanggan harus berupa teks.",
                 "string.empty": "Email pelanggan tidak boleh kosong.",
                 "string.email": "Format email tidak valid.",

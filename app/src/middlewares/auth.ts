@@ -1,6 +1,7 @@
 import tokenService from "../services/tokenService.js";
 import errorAPI from "@utils/errorAPI";
 import { NextFunction, Request, Response } from "express";
+import { JwtPayload } from "jsonwebtoken";
 
 // Check request have Authorization Bearer token with valid JWT token
 // if token not provided or invalid or expired will handled function middleware in utils directory to next request to error middleware
@@ -18,7 +19,7 @@ const auth = async (req: Request, _res: Response, next: NextFunction) => {
 
         const token = accessToken.split(" ")[1];
 
-        const payloadAccessToken = await tokenService.verifyAccessToken(token);
+        const payloadAccessToken = (await tokenService.verifyAccessToken(token)) as JwtPayload;
 
         req.user = payloadAccessToken;
 

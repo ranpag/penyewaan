@@ -5,6 +5,7 @@ import errorAPI from "@utils/errorAPI";
 import { Request, Response } from "express";
 import prisma from "~/src/database/prisma";
 import env from "~/configs/env";
+import { Prisma } from "@prisma/client";
 
 const signup = async (req: Request, res: Response) => {
     try {
@@ -121,4 +122,38 @@ const changePassword = async (req: Request, res: Response) => {
     }
 };
 
-export default { signup, signin, refresh, changePassword };
+const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const hashedPassword = await bcrypt.hash(req.body.new_password, env.COST_FACTOR);
+        const admin = await prisma.admin.update({
+            where: {
+                admin_username: req.body.admin_username
+            },
+            data: {
+                admin_password: hashedPassword
+            },
+            omit: { admin_password: true }
+        });
+
+        logger.info(`${admin.admin_username} has been resetting password`);
+
+        return res.status(200).json({
+            success: true,
+            statusCode: 200,
+            message: "Reset password successfull",
+            data: admin
+        });
+    } catch (err) {
+        logger.error("Error during signin:" + err);
+
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            if (err.code === "P2025") {
+                throw new errorAPI("Admin tidak ditemukan", 404);
+            }
+        }
+
+        throw err;
+    }
+};
+
+export default { signup, signin, refresh, changePassword, resetPassword };

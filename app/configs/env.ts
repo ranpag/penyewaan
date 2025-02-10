@@ -13,7 +13,7 @@ const envValidate = Joi.object()
         COST_FACTOR: Joi.number().allow("").empty(""),
 
         DATABASE_URL: Joi.string().required(),
-        FRONTEND_URL: Joi.string().allow("").empty("").default("http://localhost:5137"),
+        FRONTEND_URL: Joi.string().allow("").empty("").default("http://localhost:5173"),
 
         CACHE_DRIVER: Joi.string().allow("").empty(""),
         CACHE_PREFIX: Joi.string().allow("").empty(""),
@@ -23,8 +23,8 @@ const envValidate = Joi.object()
         REDIS_HOST: Joi.string().allow("").empty("").default("127.0.0.1"),
         REDIS_PORT: Joi.number().allow("").empty("").default(6379),
 
-        JWT_TOKEN_SECRET_PRIVATE_PATH: Joi.string().required(),
-        JWT_TOKEN_SECRET_PUBLIC_PATH: Joi.string().required(),
+        JWT_TOKEN_SECRET_PRIVATE: Joi.string().required(),
+        JWT_TOKEN_SECRET_PUBLIC: Joi.string().required(),
 
         REFRESH_TOKEN_EXPIRATION_DAYS: Joi.number().allow("").empty("").default(15),
         ACCESS_TOKEN_EXPIRATION_MINUTES: Joi.number().allow("").empty("").default(30),
@@ -63,8 +63,8 @@ export default {
     REDIS_HOST: env.REDIS_HOST,
     REDIS_PORT: env.REDIS_PORT,
 
-    JWT_TOKEN_SECRET_PRIVATE_PATH: env.JWT_TOKEN_SECRET_PRIVATE_PATH,
-    JWT_TOKEN_SECRET_PUBLIC_PATH: env.JWT_TOKEN_SECRET_PUBLIC_PATH,
+    JWT_TOKEN_SECRET_PRIVATE: Buffer.from(env.JWT_TOKEN_SECRET_PRIVATE, "base64").toString("utf-8"),
+    JWT_TOKEN_SECRET_PUBLIC: Buffer.from(env.JWT_TOKEN_SECRET_PUBLIC, "base64").toString("utf-8"),
 
     REFRESH_TOKEN_EXPIRATION_DAYS: env.REFRESH_TOKEN_EXPIRATION_DAYS,
     ACCESS_TOKEN_EXPIRATION_MINUTES: env.ACCESS_TOKEN_EXPIRATION_MINUTES,

@@ -243,7 +243,7 @@ paths:
     get:
       tags:
         - Autentikasi
-      summary: Membuat access token baru tanpa signin
+      summary: Membuat access token baru
       description: Menggunakan refresh token untuk mendapatkan access token baru.
       parameters:
         - in: header
@@ -318,7 +318,7 @@ paths:
                         - "Refresh token wajib dikirim."
         500:
           $ref: '#/components/responses/InternalServerError'
-  /changepassword:
+  /change-password:
     patch:
       tags:
         - Autentikasi
@@ -400,6 +400,97 @@ paths:
                           - "Konfirmasi password harus sama dengan password baru."
         401:
           $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /reset-password:
+    patch:
+      tags:
+        - Autentikasi
+      summary: Reset password admin
+      description: Mereset password admin dan mengembalikan data admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                admin_username:
+                  type: string
+                  example: "admin4"
+                new_password:
+                  type: string
+                  example: "password123"
+                confirm_password:
+                  type: string
+                  example: "password123"
+              required:
+                - admin_username
+                - new_password
+                - confirm_password
+      responses:
+        200:
+          description: Reset passowrd berhasil, mengembalikan data admin.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Reset password successfull"
+                  data:
+                    type: object
+                    properties:
+                      admin_id:
+                        type: integer
+                        example: 6
+                      admin_username:
+                        type: string
+                        example: "admin4"
+        400:
+          description: Data yang dikirim tidak valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
+                      admin_username:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Admin Username tidak boleh kosong."
+                          - "Admin username tidak ditemukan."
+                      new_password:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Password baru tidak boleh kosong."
+                          - "Password baru harus memiliki minimal 8 karakter."
+                      confirm_password:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Konfirmasi password tidak boleh kosong."
+                          - "Konfirmasi password harus sama dengan password baru."
         500:
           $ref: '#/components/responses/InternalServerError'
   /kategori:
@@ -1000,7 +1091,7 @@ paths:
       summary: Selesaikan penyewaan
       security:
         - BearerAuth: []
-      description: Mengubah status pembayaran menjadi LUNAS dan status pengembalian menjadi SUDAH KEMBALI dengan mengembalikan stok alat dan mempertahankan jumlah alat yang disewa pada data penyewaan detail
+      description: Mengubah status pembayaran menjadi LUNAS dan status pengembalian menjadi SUDAH KEMBALI dengan mengembalikan stok alat dan mempertahankan data jumlah alat yang disewa pada data penyewaan detail
       parameters:
         - $ref: "#/components/parameters/PenyewaanId"
       responses:

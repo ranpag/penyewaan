@@ -1,18 +1,10 @@
 import jwt from "jsonwebtoken";
 import env from "~/configs/env";
 import errorAPI from "@utils/errorAPI";
-import fs from "fs";
-import path from "path";
-
-const privateKeyPath = path.resolve(env.JWT_TOKEN_SECRET_PRIVATE_PATH);
-const publicKeyPath = path.resolve(env.JWT_TOKEN_SECRET_PUBLIC_PATH);
-
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-const publicKey = fs.readFileSync(publicKeyPath, "utf8");
 
 const generateAccessToken = (userData: Record<string, string | number>) => {
     const expiresIn = env.ACCESS_TOKEN_EXPIRATION_MINUTES * 60;
-    return jwt.sign(userData, privateKey, {
+    return jwt.sign(userData, env.JWT_TOKEN_SECRET_PRIVATE, {
         algorithm: "RS256",
         expiresIn
     });
@@ -20,7 +12,7 @@ const generateAccessToken = (userData: Record<string, string | number>) => {
 
 const verifyAccessToken = async (accessToken: string) => {
     try {
-        return jwt.verify(accessToken, publicKey, {
+        return jwt.verify(accessToken, env.JWT_TOKEN_SECRET_PUBLIC, {
             algorithms: ["RS256"]
         });
     } catch (err) {
@@ -39,7 +31,7 @@ const verifyAccessToken = async (accessToken: string) => {
 
 const generateRefreshToken = (userData: Record<string, string | number>) => {
     const expiresIn = 60 * 60 * 24 * env.REFRESH_TOKEN_EXPIRATION_DAYS;
-    return jwt.sign(userData, privateKey, {
+    return jwt.sign(userData, env.JWT_TOKEN_SECRET_PRIVATE, {
         algorithm: "RS256",
         expiresIn
     });
@@ -47,7 +39,7 @@ const generateRefreshToken = (userData: Record<string, string | number>) => {
 
 const verifyRefreshToken = async (refreshToken: string) => {
     try {
-        return jwt.verify(refreshToken, publicKey, {
+        return jwt.verify(refreshToken, env.JWT_TOKEN_SECRET_PUBLIC, {
             algorithms: ["RS256"]
         });
     } catch (err) {
