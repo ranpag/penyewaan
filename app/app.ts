@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import compression from "compression";
 import helmet from "helmet";
@@ -7,7 +7,6 @@ import routes from "~/routes/routes";
 import error from "@middlewares/error";
 import rateLimiter from "@middlewares/rateLimiter.js";
 import redocExpressMiddleware from "redoc-express";
-import env from "./configs/env";
 
 const app: Application = express();
 
@@ -44,6 +43,10 @@ app.get(
     })
 );
 
+app.get("/", (_req: Request, res: Response) => {
+    res.send("Express on Vercel");
+});
+
 // Routing
 app.use("/api", routes);
 
@@ -51,8 +54,8 @@ app.use("/api", routes);
 app.use(error.notFound);
 app.use(error.handler);
 
-app.listen(env.PORT, () => {
-    logger.info(`Server HTTP/1.1 berjalan di http://${env.HOST}:${env.PORT}`);
+app.listen(3000, () => {
+    logger.info(`Server HTTP/1.1 berjalan di port 3000`);
 });
 
 export default app;
