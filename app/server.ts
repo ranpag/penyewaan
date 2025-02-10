@@ -47,3 +47,5 @@ process.on("SIGINT", async () => {
 app.listen(env.PORT, () => {
     logger.info(`Server HTTP/1.1 berjalan di http://${env.HOST}:${env.PORT}`);
 });
+
+export default app;
