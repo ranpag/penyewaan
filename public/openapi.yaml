@@ -4,6 +4,7 @@ info:
   description: Dokumentasi API untuk aplikasi penyewaan
   version: 1.0.0
 servers:
+  - url: https://penyewaan.vercel.app/api/v1
   - url: http://localhost:3000/api/v1
     
 x-tagGroups:
