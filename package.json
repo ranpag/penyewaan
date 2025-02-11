@@ -12,7 +12,7 @@
         "lint": "eslint 'app/**/*.{ts,tsx}' --fix",
         "format": "prettier --write 'app/**/*.{ts,tsx,js}'",
         "build": "tsc && tsc-alias && prisma generate",
-        "start": "node build/server.js"
+        "start": "node build/api/index.js"
     },
     "keywords": [],
     "author": "",
