@@ -1,3 +1,3 @@
-import app from "../app/app.ts"
+import app from "../app/app.js"
 
 export default app;
