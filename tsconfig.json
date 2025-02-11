@@ -26,6 +26,6 @@
         "resolveFullPaths": true,
         "verbose": false
     },
-    "include": ["app/**/*", "app/global.d.ts", "api/index.ts"],
+    "include": ["app/**/*"],
     "exclude": ["node_modules", "build"]
 }
