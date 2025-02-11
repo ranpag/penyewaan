@@ -6,3 +6,6 @@ storages/keys/*.pem
 storages/ssl/*.key
 storages/ssl/*.crt
 storages/ssl/*.csr
+
+dist
+build
