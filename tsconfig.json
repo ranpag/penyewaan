@@ -26,6 +26,6 @@
         "resolveFullPaths": true,
         "verbose": false
     },
-    "include": ["app/**/*"],
+    "include": ["app/**/*", "api/*"],
     "exclude": ["node_modules", "build"]
 }
