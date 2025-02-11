@@ -12,8 +12,13 @@
         "lint": "eslint 'app/**/*.{ts,tsx}' --fix",
         "format": "prettier --write 'app/**/*.{ts,tsx,js}'",
         "build": "tsc && tsc-alias && prisma generate",
-        "start": "node build/api/index.js"
+        "start": "node build/api/index.js",
+        "add-build": "git add build"
     },
+    "pre-commit": [
+        "build",
+        "add-build"
+    ],
     "keywords": [],
     "author": "",
     "license": "ISC",
