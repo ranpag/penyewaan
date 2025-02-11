@@ -7,8 +7,22 @@ import { checkNaN } from "../utils/checkNaN";
 import { Prisma } from "@prisma/client";
 
 const index = async (req: Request, res: Response) => {
+    const { page, search } = req.query;
+    const limit = 25;
+    const keywords = Array.isArray(search)
+        ? search.map((item) => (typeof item === "string" ? item : undefined)).filter((e) => String(e).trim())
+        : typeof search === "string"
+          ? [search]
+          : undefined;
+
     try {
         const rentals = await prisma.penyewaan.findMany({
+            where: {
+                OR: keywords?.flatMap((keyword) => [
+                    { pelanggan: { pelanggan_nama: { contains: keyword, mode: "insensitive" } } },
+                    { pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }
+                ])
+            },
             include: {
                 _count: true,
                 pelanggan: {
@@ -18,20 +32,28 @@ const index = async (req: Request, res: Response) => {
                     }
                 }
             },
-            take: 10,
-            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
+            take: limit,
+            skip: typeof page === "string" ? Number(page) * limit - limit : 0
         });
 
-        const totalRentals = await prisma.penyewaan.count();
+        const totalRentals = await prisma.penyewaan.count({
+            where: {
+                OR: keywords?.flatMap((keyword) => [
+                    { pelanggan: { pelanggan_nama: { contains: keyword, mode: "insensitive" } } },
+                    { pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }
+                ])
+            }
+        });
 
         return res.status(200).json({
             success: true,
             message: "Success mendpatkan semua penyewaan",
             data: rentals,
             pagination: {
-                totalItem: rentals.length,
-                totalData: totalRentals,
-                totalPage: totalRentals > 10 ? Math.floor(totalRentals / rentals.length) + 1 : Math.floor(totalRentals / rentals.length)
+                item: rentals.length,
+                matchData: totalRentals,
+                allPage: Math.ceil(totalRentals / limit),
+                currentPage: Number(page) || 1
             }
         });
     } catch (err) {

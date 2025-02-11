@@ -6,26 +6,39 @@ import { checkNaN } from "../utils/checkNaN";
 import { Prisma } from "@prisma/client";
 
 const index = async (req: Request, res: Response) => {
+    const { page, search } = req.query;
+    const limit = 25;
+    const keywords = Array.isArray(search)
+        ? search.map((item) => (typeof item === "string" ? item : undefined)).filter(e => String(e).trim())
+        : typeof search === "string"
+          ? [search]
+          : undefined;
+
     try {
         const categories = await prisma.kategori.findMany({
+            where: {
+                OR: keywords?.map((keyword) => ({ kategori_nama: { contains: keyword, mode: "insensitive" } }))
+            },
             include: { _count: true },
-            take: 10,
-            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
+            take: limit,
+            skip: typeof page === "string" ? Number(page) * limit - limit : 0
         });
 
-        const totalAllCategories = await prisma.kategori.count();
+        const totalAllCategories = await prisma.kategori.count({
+            where: {
+                OR: keywords?.map((keyword) => ({ kategori_nama: { contains: keyword, mode: "insensitive" } }))
+            }
+        });
 
         return res.status(200).json({
             success: true,
             message: "Success mendapatkan semua kategori",
             data: categories,
             pagination: {
-                totalItem: categories.length,
-                totalData: totalAllCategories,
-                totalPage:
-                    totalAllCategories > 10
-                        ? Math.floor(totalAllCategories / categories.length) + 1
-                        : Math.floor(totalAllCategories / categories.length)
+                item: categories.length,
+                matchData: totalAllCategories,
+                allPage: Math.ceil(totalAllCategories / limit),
+                currentPage: Number(page) || 1
             }
         });
     } catch (err) {

@@ -11,6 +11,7 @@ x-tagGroups:
   - name: Autentikasi & Otorisasi
     tags:
       - Autentikasi
+      - Admin
   - name: The Object
     tags:
       - Kategori
@@ -24,16 +25,18 @@ x-tagGroups:
 tags:
   - name: Autentikasi
     description: Operasi autentikasi seperti sign in, sign up, refresh
+  - name: Admin
+    description: Kelola admin
   - name: Kategori
-    description: Semua tentang kategori
+    description: Kelola Semua tentang kategori
   - name: Alat
-    description: Semua tentang alat
+    description: Kelola Semua tentang alat
   - name: Pelanggan
-    description: Semua tentang pelanggan
+    description: Kelola Semua tentang pelanggan
   - name: Data Pelanggan
     description: API spesifik untuk data pelanggan yang sebenarnya bisa dilakuakan langsung di Pelanggan
   - name: Penyewaan
-    description: Semua tentang penyewaan & bisa langsung melakuakan request sekaligus tanpa harus mengakses /detail/pelanggan
+    description: Semua tentang penyewaan & bisa langsung melakuakan request sekaligus tanpa 1 per 1 di Detail Penyewaan
   - name: Detail Penyewaan
     description: API spesifik untuk detail penyewaan yang sebarnya bisa dilakuakan langsung di Penyewaan
     
@@ -494,6 +497,81 @@ paths:
                           - "Konfirmasi password harus sama dengan password baru."
         500:
           $ref: '#/components/responses/InternalServerError'
+  /admin:
+    get:
+      tags:
+        - Admin
+      summary: Ambil semua admin
+      description: Mengembalikan daftar semua admin yang tersedia.
+      parameters:
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+      responses:
+        200:
+          description: Berhasil mendapatkan semua admin.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Success mendapatkan semua admin"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        admin_id:
+                          type: integer
+                          example: 6
+                        admin_username:
+                          type: string
+                          example: "admin4"
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'     
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /admin/{id}:
+    delete:
+      tags:
+        - Admin
+      summary: Menghapus admin
+      security:
+        - BearerAuth: []
+      description: Menghapus informasi admin berdasarkan ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                your_password:
+                  type: string
+                  example: yoo123pagar
+              required:
+                - your_password
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+            example: 1
+          description: Admin yang akan dihapus berdasarkan id
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
   /kategori:
     get:
       tags:
@@ -502,6 +580,7 @@ paths:
       description: Mengembalikan daftar semua kategori yang tersedia.
       parameters:
         - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/SearchQuery"
       responses:
         200:
           $ref: '#/components/responses/KategoriAll'
@@ -612,6 +691,35 @@ paths:
       description: Mengembalikan daftar semua alat yang tersedia.
       parameters:
         - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: min_harga
+          schema:
+            type: integer
+            example: 1
+          required: false
+          description: Minimal harga alat untuk alat di filter
+        - in: query
+          name: max_harga
+          schema:
+            type: integer
+            example: 1
+          required: false
+          description: Maximal harga alat untuk di filter
+        - in: query
+          name: min_stok
+          schema:
+            type: integer
+            example: 1
+          required: false
+          description: Minimal stok alat untuk di filter
+        - in: query
+          name: max_stok
+          schema:
+            type: integer
+            example: 1
+          required: false
+          description: Maximal stok alat untuk di filter
       responses:
         200:
           $ref: '#/components/responses/AlatAll'
@@ -722,6 +830,7 @@ paths:
       description: Mengembalikan daftar semua pelanggan yang tersedia.
       parameters:
         - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/SearchQuery"
       responses:
         200:
           $ref: '#/components/responses/PelangganAll'
@@ -844,6 +953,14 @@ paths:
       description: Mengembalikan daftar semua data pelanggan yang tersedia.
       parameters:
         - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/SearchQuery"
+        - in: query
+          name: pelanggan_id
+          schema:
+            type: integer
+            example: 1
+          required: false
+          description: Mencari pelanggan data yang sesuai dengan id yang diberikan
       responses:
         200:
           $ref: '#/components/responses/DataPelangganAll'
@@ -966,6 +1083,7 @@ paths:
       description: Mengembalikan daftar semua penyewaan yang tersedia.
       parameters:
         - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/SearchQuery"
       responses:
         200:
           $ref: '#/components/responses/PenyewaanAll'
@@ -1110,6 +1228,13 @@ paths:
       description: Mengembalikan daftar semua detail penyewaan yang tersedia.
       parameters:
         - $ref: "#/components/parameters/PageQuery"
+        - in: query
+          name: penyewaan_id
+          schema:
+            type: integer
+            example: 1
+          required: false
+          description: Mencari detail penyewaan yang sesuai dengan id yang diberikan
       responses:
         200:
           $ref: '#/components/responses/DetailPenyewaanAll'
@@ -1245,6 +1370,14 @@ components:
         type: integer
         example: 2
         default: 1
+      description: Mendapatkan data sesuai page
+    SearchQuery:
+      name: search
+      in: query
+      schema:
+        type: string
+        example: hello
+      description: Mencari nama yang sesuai dengan search
     KategoriId:
       name: id
       in: path
@@ -1292,13 +1425,16 @@ components:
     Pagination:
       type: object
       properties:
-        totalItem:
+        item:
           type: integer
           example: 5
-        totalAllData:
+        matchData:
           type: integer
           example: 5
-        totalPage:
+        allPage:
+          type: integer
+          example: 1
+        currentPage:
           type: integer
           example: 1
       

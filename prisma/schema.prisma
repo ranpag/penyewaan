@@ -35,9 +35,11 @@ model pelanggan {
   pelanggan_nama String @db.VarChar(150)
   pelanggan_alamat String @db.VarChar(200)
   pelanggan_notelp String @db.Char(13)
-  pelanggan_email String @db.VarChar(100)
+  pelanggan_email String @db.VarChar(100) @unique
   pelanggan_data pelanggan_data?
   penyewaan penyewaan[]
+
+  @@index([pelanggan_nama])
 }
 
 model pelanggan_data {
@@ -64,6 +66,11 @@ model penyewaan {
   penyewaan_totalharga    Int
   pelanggan pelanggan @relation(fields: [penyewaan_pelanggan_id], references: [pelanggan_id], onDelete: Cascade, onUpdate: Cascade)
   penyewaan_detail penyewaan_detail[]
+
+  @@index([penyewaan_pelanggan_id])
+  @@index([penyewaan_totalharga])
+  @@index([penyewaan_sttspembayaran])
+  @@index([penyewaan_sttskembali])
 }
 
 model penyewaan_detail {
@@ -74,12 +81,17 @@ model penyewaan_detail {
   penyewaan_detail_subharga Int
   penyewaan penyewaan @relation(fields: [penyewaan_detail_penyewaan_id], references: [penyewaan_id], onDelete: Cascade, onUpdate: Cascade)
   alat alat @relation(fields: [penyewaan_detail_alat_id], references: [alat_id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([penyewaan_detail_penyewaan_id])
+  @@index([penyewaan_detail_alat_id])
 }
 
 model kategori {
   kategori_id   Int    @id @default(autoincrement())
   kategori_nama String @db.VarChar(100)
   alat alat[]
+
+  @@index([kategori_nama])
 }
 
 model alat {
@@ -91,5 +103,8 @@ model alat {
   alat_stok     Int
   kategori kategori @relation(fields: [alat_kategori_id], references: [kategori_id], onDelete: Cascade, onUpdate: Cascade)
   penyewaan_detail penyewaan_detail[]
+
+  @@index([alat_kategori_id])
+  @@index([alat_nama])
 }
 

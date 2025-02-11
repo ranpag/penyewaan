@@ -6,8 +6,15 @@ import prisma from "../database/prisma";
 import { Prisma } from "@prisma/client";
 
 const index = async (req: Request, res: Response) => {
+    const { page, penyewaan_id } = req.query;
+    const limit = 25;
+
     try {
+        const resultNumberParams = checkNaN({ penyewaan_id });
         const rentalDetails = await prisma.penyewaan_detail.findMany({
+            where: {
+                penyewaan_detail_penyewaan_id: resultNumberParams.penyewaan_id
+            },
             include: {
                 alat: {
                     select: {
@@ -18,21 +25,25 @@ const index = async (req: Request, res: Response) => {
                     }
                 }
             },
-            take: 10,
-            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
+            take: limit,
+            skip: typeof page === "string" ? Number(page) * limit - limit : 0
         });
 
-        const totalAllDetails = await prisma.penyewaan_detail.count();
+        const totalAllDetails = await prisma.penyewaan_detail.count({
+            where: {
+                penyewaan_detail_penyewaan_id: resultNumberParams.penyewaan_id
+            }
+        });
 
         return res.status(200).json({
             success: true,
             message: "Success mendapatkan semua penyewaan detail",
             data: rentalDetails,
             pagination: {
-                totalItem: rentalDetails.length,
-                totalData: totalAllDetails,
-                totalPage:
-                    totalAllDetails > 10 ? Math.floor(totalAllDetails / rentalDetails.length) + 1 : Math.floor(totalAllDetails / rentalDetails.length)
+                item: rentalDetails.length,
+                matchData: totalAllDetails,
+                allPage: Math.ceil(totalAllDetails / limit),
+                currentPage: Number(page) || 1
             }
         });
     } catch (err) {

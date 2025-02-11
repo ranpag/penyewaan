@@ -7,26 +7,48 @@ import { checkNaN } from "../utils/checkNaN";
 import { Prisma } from "@prisma/client";
 
 const index = async (req: Request, res: Response) => {
+    const { page, search } = req.query;
+    const limit = 25;
+    const keywords = Array.isArray(search)
+        ? search.map((item) => (typeof item === "string" ? item : undefined)).filter((e) => String(e).trim())
+        : typeof search === "string"
+          ? [search]
+          : undefined;
+
     try {
         const customers = await prisma.pelanggan.findMany({
+            where: {
+                OR: keywords?.flatMap((keyword) => [
+                    { pelanggan_nama: { contains: keyword, mode: "insensitive" } },
+                    { pelanggan_email: { contains: keyword, mode: "insensitive" } }
+                ])
+            },
             include: {
                 pelanggan_data: true,
                 _count: true
             },
-            take: 10,
-            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
+            take: limit,
+            skip: typeof page === "string" ? Number(page) * limit - limit : 0
         });
 
-        const totalCustomers = await prisma.pelanggan.count();
+        const totalCustomers = await prisma.pelanggan.count({
+            where: {
+                OR: keywords?.flatMap((keyword) => [
+                    { pelanggan_nama: { contains: keyword, mode: "insensitive" } },
+                    { pelanggan_email: { contains: keyword, mode: "insensitive" } }
+                ])
+            }
+        });
 
         return res.status(200).json({
             success: true,
             message: "Success mendapatkan semua pelanggan",
             data: customers,
             pagination: {
-                totalItem: customers.length,
-                totalData: totalCustomers,
-                totalPage: totalCustomers > 10 ? Math.floor(totalCustomers / customers.length) + 1 : Math.floor(totalCustomers / customers.length)
+                item: customers.length,
+                matchData: totalCustomers,
+                allPage: Math.ceil(totalCustomers / limit),
+                currentPage: Number(page) || 1
             }
         });
     } catch (err) {

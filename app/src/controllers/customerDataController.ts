@@ -6,25 +6,47 @@ import { checkNaN } from "@utils/checkNaN";
 import { deleteFile } from "../services/fileService";
 
 const index = async (req: Request, res: Response) => {
+    const { page, search, pelanggan_id } = req.query;
+    const limit = 25;
+    const keywords = Array.isArray(search)
+        ? search.map((item) => (typeof item === "string" ? item : undefined)).filter((e) => String(e).trim())
+        : typeof search === "string"
+          ? [search]
+          : undefined;
+
     try {
+        const resultNumberParams = checkNaN({ pelanggan_id });
         const customerData = await prisma.pelanggan_data.findMany({
-            take: 10,
-            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
+            where: {
+                OR: resultNumberParams.pelanggan_id
+                    ? [{ pelanggan_data_pelanggan_id: resultNumberParams.pelanggan_id }]
+                    : keywords?.flatMap((keyword) => [
+                          { pelanggan: { pelanggan_nama: { contains: keyword, mode: "insensitive" } } },
+                          { pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }
+                      ])
+            },
+            take: limit,
+            skip: typeof page === "string" ? Number(page) * limit - limit : 0
         });
 
-        const totalCustomerData = await prisma.pelanggan_data.count();
+        const totalCustomerData = await prisma.pelanggan_data.count({
+            where: {
+                OR: keywords?.flatMap((keyword) => [
+                    { pelanggan: { pelanggan_nama: { contains: keyword, mode: "insensitive" } } },
+                    { pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }
+                ])
+            }
+        });
 
         return res.status(200).json({
             success: true,
             message: "Success mendapatkan pelanggan data",
             data: customerData,
             pagination: {
-                totalItem: customerData.length,
-                totalData: totalCustomerData,
-                totalPage:
-                    totalCustomerData > 10
-                        ? Math.floor(totalCustomerData / customerData.length) + 1
-                        : Math.floor(totalCustomerData / customerData.length)
+                item: customerData.length,
+                matchData: totalCustomerData,
+                allPage: Math.ceil(totalCustomerData / limit),
+                currentPage: Number(page) || 1
             }
         });
     } catch (err) {

@@ -6,19 +6,46 @@ import { checkNaN } from "../utils/checkNaN";
 import { Prisma } from "@prisma/client";
 
 const index = async (req: Request, res: Response) => {
+    const { page, search, min_harga, max_harga, min_stok, max_stok } = req.query;
+    const limit = 25;
+    const keywords = Array.isArray(search)
+        ? search.map((item) => (typeof item === "string" ? item : undefined)).filter((e) => String(e).trim())
+        : typeof search === "string"
+          ? [search]
+          : undefined;
+
     try {
+        const resultNumberParams = checkNaN({ min_harga, max_harga, min_stok, max_stok});
+        const whereClause: Prisma.alatWhereInput = {
+            ...(keywords
+                ? {
+                      OR: keywords?.flatMap((keyword) => [
+                          { alat_nama: { contains: keyword as string, mode: "insensitive" } },
+                          { kategori: { kategori_nama: { contains: keyword as string, mode: "insensitive" } } }
+                      ])
+                  }
+                : {}),
+            ...(resultNumberParams.min_harga ? { alat_hargaperhari: { gte: Number(min_harga) } } : {}),
+            ...(resultNumberParams.max_harga ? { alat_hargaperhari: { lte: Number(max_harga) } } : {}),
+            ...(resultNumberParams.min_stok ? { alat_stok: { gte: Number(min_stok) } } : {}),
+            ...(resultNumberParams.max_stok ? { alat_stok: { lte: Number(max_stok) } } : {})
+        };
+
         const tools = await prisma.alat.findMany({
+            where: whereClause,
             include: {
                 kategori: {
                     include: { _count: true }
                 },
                 _count: true
             },
-            take: 10,
-            skip: typeof req.query.page === "string" ? Number(req.query.page) * 10 - 10 : 0
+            take: limit,
+            skip: typeof page === "string" ? Number(page) * limit - limit : 0
         });
 
-        const totalAllTools = await prisma.alat.count();
+        const totalAllTools = await prisma.alat.count({
+            where: whereClause
+        });
 
         const newTools = tools.map((tool) => {
             return {
@@ -34,9 +61,10 @@ const index = async (req: Request, res: Response) => {
             message: "Success mendapatkan semua alat",
             data: newTools,
             pagination: {
-                totalItem: tools.length,
-                totalAllData: totalAllTools,
-                totalPage: totalAllTools > 10 ? Math.floor(totalAllTools / tools.length) + 1 : Math.floor(totalAllTools / tools.length)
+                item: tools.length,
+                matchData: totalAllTools,
+                allPage: Math.ceil(totalAllTools / limit),
+                currentPage: Number(page) || 1
             }
         });
     } catch (err) {
