@@ -16,8 +16,9 @@ app.use(
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "https://unpkg.com"],
-                styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
+                scriptSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'"],
+                styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com", "'unsafe-inline'", "blob:"],
+                "worker-src": ["'self'", "blob:"],
                 imgSrc: ["'self'", "data:", "https://cdn.redoc.ly"]
             }
         }
