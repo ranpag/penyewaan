@@ -11,7 +11,7 @@
         "seed": "tsx app/src/database/seed.ts",
         "lint": "eslint 'app/**/*.{ts,tsx}' --fix",
         "format": "prettier --write 'app/**/*.{ts,tsx,js}'",
-        "build": "tsc && tsc-alias && prisma generate",
+        "build": "prisma generate && tsc && tsc-alias",
         "start": "node build/app.js"
     },
     "keywords": [],
