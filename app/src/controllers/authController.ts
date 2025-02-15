@@ -151,7 +151,7 @@ const forgotPassword = async (req: Request, res: Response) => {
     try {
         const passwordResetToken = tokenService.generateResetPasswordToken(req.body);
 
-        emailService.sendPasswordResetEmail(req.body.admin_email, passwordResetToken);
+        await emailService.sendPasswordResetEmail(req.body.admin_email, passwordResetToken);
 
         logger.info(`${req.body.admin_email} has make request password reset`);
 
