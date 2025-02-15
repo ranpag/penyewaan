@@ -13,9 +13,6 @@ export const cacheConfig = {
     redis: {
         driver: "redis",
         mode: "standalone",
-        username: env.REDIS_USERNAME,
-        password: env.REDIS_PASSWORD,
-        host: env.REDIS_HOST,
-        port: env.REDIS_PORT
+        url: env.penyewaan_REDIS_URL
     }
 };
