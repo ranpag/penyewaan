@@ -70,15 +70,18 @@ async function main() {
         data: [
             {
                 admin_username: "admin1",
-                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR)
+                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR),
+                admin_email: "null"
             },
             {
                 admin_username: "admin2",
-                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR)
+                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR),
+                admin_email: "null"
             },
             {
                 admin_username: "admin3",
-                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR)
+                admin_password: bcrypt.hashSync("Admin123$", env.COST_FACTOR),
+                admin_email: "null"
             }
         ]
     });

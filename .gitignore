@@ -7,5 +7,7 @@ storages/ssl/*.key
 storages/ssl/*.crt
 storages/ssl/*.csr
 
+app/src/database/seed.ts
+
 dist
 build

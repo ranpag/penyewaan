@@ -6,7 +6,7 @@ import { Request, Response } from "express";
 import prisma from "~/src/database/prisma";
 import env from "~/configs/env";
 import { Prisma } from "@prisma/client";
-import emailService from "@services/email/service"
+import emailService from "~/src/services/emails/service"
 import { JwtPayload } from "jsonwebtoken";
 
 const signup = async (req: Request, res: Response) => {
