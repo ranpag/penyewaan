@@ -243,6 +243,46 @@ paths:
                           - "Konfirmasi password harus sama dengan password admin."
         500:
           $ref: '#/components/responses/InternalServerError'
+  /auth/signout:
+    get:
+      tags:
+        - Autentikasi
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: header
+          name: X-Refresh-Token
+          required: true
+          schema:
+            type: string
+            example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          description: Refresh token yang akan di blacklist.
+      summary: Sign out sebagai admin
+      description: Melakukan logout dan memblacklist semua token.
+      responses:
+        204:
+          description: No Content
+        401:
+          description: Permintaan tidak memiliki otorisasi yang valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "Invalid credentials"
+        500:
+          $ref: '#/components/responses/InternalServerError'
   /auth/refresh:
     get:
       tags:
@@ -257,6 +297,13 @@ paths:
             type: string
             example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
           description: Refresh token yang digunakan untuk mendapatkan access token baru.
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+            example: "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+          description: Access token yang akan di blacklist.
       responses:
         200:
           description: Access token berhasil diperbarui

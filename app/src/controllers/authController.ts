@@ -83,7 +83,7 @@ const signout = async (req: Request, res: Response) => {
         const accessToken = bearerToken.split(" ")[1];
 
         if (!refreshToken || !accessToken) {
-            throw new errorAPI("Unauthorized", 401, ["Access Token and Refresh Token required"]);
+            throw new errorAPI("Bad Request", 400, ["Access Token and Refresh Token required"]);
         }
 
         await tokenService.blacklistToken(accessToken, refreshToken);
@@ -102,7 +102,7 @@ const refresh = async (req: Request, res: Response) => {
         const accessToken = bearerToken.split(" ")[1];
 
         if (!refreshToken || !accessToken) {
-            throw new errorAPI("Unauthorized", 401, ["Access Token and Refresh Token required"]);
+            throw new errorAPI("Bad Request", 400, ["Access Token and Refresh Token required"]);
         }
         const payloadRefreshToken = (await tokenService.verifyRefreshToken(refreshToken)) as Record<string, string | number>;
 
