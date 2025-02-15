@@ -1,6 +1,7 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import env from "~/configs/env";
 import errorAPI from "@utils/errorAPI";
+import cache from "./cacheService";
 
 const generateAccessToken = (userData: Record<string, string | number>) => {
     const expiresIn = env.ACCESS_TOKEN_EXPIRATION_MINUTES * 60;
@@ -12,6 +13,11 @@ const generateAccessToken = (userData: Record<string, string | number>) => {
 
 const verifyAccessToken = async (accessToken: string) => {
     try {
+        const blacklist = await cache.get(`blacklist:${accessToken}`);
+        if (blacklist) {
+            throw new errorAPI("Forbidden", 403, ["Kamu tidak bisa mengakses ini"]);
+        }
+
         return jwt.verify(accessToken, env.JWT_TOKEN_SECRET_PUBLIC, {
             algorithms: ["RS256"]
         });
@@ -39,6 +45,11 @@ const generateRefreshToken = (userData: Record<string, string | number>) => {
 
 const verifyRefreshToken = async (refreshToken: string) => {
     try {
+        const blacklist = await cache.get(`blacklist:${refreshToken}`);
+        if (blacklist) {
+            throw new errorAPI("Forbidden", 403, ["Kamu tidak bisa mengakses ini"]);
+        }
+
         return jwt.verify(refreshToken, env.JWT_TOKEN_SECRET_PUBLIC, {
             algorithms: ["RS256"]
         });
@@ -56,9 +67,39 @@ const verifyRefreshToken = async (refreshToken: string) => {
     }
 };
 
+const blacklistToken = async (accessToken?: string, refreshToken?: string) => {
+    console.log(accessToken, refreshToken);
+    try {
+        if (accessToken) {
+            const decodedAccessToken = jwt.decode(accessToken);
+            const exp = (decodedAccessToken as JwtPayload).exp;
+            const ttl = exp! - Math.floor(Date.now() / 1000);
+
+            if (ttl > 0) {
+                await cache.set(`blacklist:${accessToken}`, "true", ttl);
+                console.log(`Access Token diblacklist selama ${ttl} detik`);
+            }
+        }
+
+        if (refreshToken) {
+            const decodeRefreshToken = jwt.decode(refreshToken);
+            const exp = (decodeRefreshToken as JwtPayload).exp;
+            const ttl = exp! - Math.floor(Date.now() / 1000);
+
+            if (ttl > 0) {
+                await cache.set(`blacklist:${refreshToken}`, "true", ttl);
+                console.log(`Refresh Token diblacklist selama ${ttl} detik`);
+            }
+        }
+    } catch (err) {
+        throw err;
+    }
+};
+
 export default {
     generateAccessToken,
     verifyAccessToken,
     generateRefreshToken,
-    verifyRefreshToken
+    verifyRefreshToken,
+    blacklistToken
 };

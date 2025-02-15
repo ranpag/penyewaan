@@ -9,6 +9,7 @@ const router = Router();
 
 router.post("/signup", middlewareHandler("guest"), sanitizeAndValidate(authValidation.signup), control(authController.signup));
 router.post("/signin", middlewareHandler("guest"), sanitizeAndValidate(authValidation.signin), control(authController.signin));
+router.get("/signout", middlewareHandler("auth"), control(authController.signout));
 router.get("/refresh", control(authController.refresh));
 router.patch(
     "/change-password",

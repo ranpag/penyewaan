@@ -18,10 +18,7 @@ const envValidate = Joi.object()
         CACHE_DRIVER: Joi.string().allow("").empty(""),
         CACHE_PREFIX: Joi.string().allow("").empty(""),
 
-        REDIS_USERNAME: Joi.string().allow("").empty(""),
-        REDIS_PASSWORD: Joi.string().allow("").empty(""),
-        REDIS_HOST: Joi.string().allow("").empty("").default("127.0.0.1"),
-        REDIS_PORT: Joi.number().allow("").empty("").default(6379),
+        penyewaan_REDIS_URL: Joi.string(),
 
         JWT_TOKEN_SECRET_PRIVATE: Joi.string().required(),
         JWT_TOKEN_SECRET_PUBLIC: Joi.string().required(),
@@ -58,10 +55,7 @@ export default {
     CACHE_DRIVER: env.CACHE_DRIVER,
     CACHE_PREFIX: env.CACHE_PREFIX,
 
-    REDIS_USERNAME: env.REDIS_USERNAME,
-    REDIS_PASSWORD: env.REDIS_PASSWORD,
-    REDIS_HOST: env.REDIS_HOST,
-    REDIS_PORT: env.REDIS_PORT,
+    penyewaan_REDIS_URL: env.penyewaan_REDIS_URL,
 
     JWT_TOKEN_SECRET_PRIVATE: Buffer.from(env.JWT_TOKEN_SECRET_PRIVATE, "base64").toString("utf-8"),
     JWT_TOKEN_SECRET_PUBLIC: Buffer.from(env.JWT_TOKEN_SECRET_PUBLIC, "base64").toString("utf-8"),

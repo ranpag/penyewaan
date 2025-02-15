@@ -76,15 +76,40 @@ const signin = async (req: Request, res: Response) => {
     }
 };
 
+const signout = async (req: Request, res: Response) => {
+    try {
+        const refreshToken = (req.headers["X-Refresh-Token"] || req.headers["x-refresh-token"]) as string;
+        const bearerToken = req.headers["authorization"] || (req.headers["Authorization"] as string);
+        const accessToken = bearerToken.split(" ")[1];
+
+        if (!refreshToken || !accessToken) {
+            throw new errorAPI("Unauthorized", 401, ["Access Token and Refresh Token required"]);
+        }
+
+        await tokenService.blacklistToken(accessToken, refreshToken);
+
+        return res.status(204).send();
+    } catch (err) {
+        logger.error("Error during signout:" + err);
+        throw err;
+    }
+};
+
 const refresh = async (req: Request, res: Response) => {
     try {
         const refreshToken = (req.headers["X-Refresh-Token"] || req.headers["x-refresh-token"]) as string;
+        const bearerToken = req.headers["authorization"] || (req.headers["Authorization"] as string);
+        const accessToken = bearerToken.split(" ")[1];
+
+        if (!refreshToken || !accessToken) {
+            throw new errorAPI("Unauthorized", 401, ["Access Token and Refresh Token required"]);
+        }
         const payloadRefreshToken = (await tokenService.verifyRefreshToken(refreshToken)) as Record<string, string | number>;
 
-        // eslint-disable-next-line no-unused-vars
         const { exp, iat, ...cleanPayload } = payloadRefreshToken;
 
-        const accessToken = tokenService.generateAccessToken(cleanPayload);
+        const newAccessToken = tokenService.generateAccessToken(cleanPayload);
+        await tokenService.blacklistToken(accessToken);
 
         return res.status(200).json({
             success: true,
@@ -92,7 +117,7 @@ const refresh = async (req: Request, res: Response) => {
             message: "Access extended",
             data: {
                 token: {
-                    access_token: accessToken
+                    access_token: newAccessToken
                 }
             }
         });
@@ -156,4 +181,4 @@ const resetPassword = async (req: Request, res: Response) => {
     }
 };
 
-export default { signup, signin, refresh, changePassword, resetPassword };
+export default { signup, signin, signout, refresh, changePassword, resetPassword };

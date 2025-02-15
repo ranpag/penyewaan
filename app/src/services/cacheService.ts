@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import env from "~/configs/env";
 import redis, { RedisClientType } from "redis";
 import { cacheConfig, cacheDriver } from "~/configs/cache.js";
 
@@ -35,7 +36,7 @@ export let redisClient: RedisClientType;
 
 if (cacheDriver === "redis") {
     redisClient = redis.createClient({
-        url: "redis://@127.0.0.1:6380"
+        url: env.penyewaan_REDIS_URL
     });
 }
 
@@ -48,12 +49,18 @@ async function connectRedis() {
 class redisCache {
     async get(key: string) {
         await connectRedis();
-        const value = await redisClient.get(key);
-        return value ? JSON.parse(value) : null;
+        return await redisClient.get(key);
     }
     async set(key: string, value: unknown, ttl: number) {
         await connectRedis();
-        await redisClient.set(key, JSON.stringify(value), { EX: ttl });
+        if (typeof value === "object") {
+            await redisClient.set(key, JSON.stringify(value), { EX: ttl });
+            return;
+        }
+        if (typeof value === "string") {
+            await redisClient.set(key, value, { EX: ttl });
+            return;
+        }
     }
     async del(key: string) {
         await connectRedis();
