@@ -22,6 +22,27 @@ const uniqueUsername = async (value: string, _helper: Joi.ExternalHelpers) => {
     return value;
 };
 
+const uniqueEmail = async (value: string, _helper: Joi.ExternalHelpers) => {
+    const admin_username = await prisma.admin.findUnique({
+        where: { admin_email: value }
+    });
+    if (admin_username) {
+        throw new Joi.ValidationError(
+            "Admin email sudah ada",
+            [
+                {
+                    message: "Admin email sudah ada",
+                    path: ["body", "admin_email"],
+                    type: "unique",
+                    context: { label: "admin_email", key: "admin_email" }
+                }
+            ],
+            value
+        );
+    }
+    return value;
+};
+
 const signup = {
     body: Joi.object()
         .keys({
@@ -30,6 +51,13 @@ const signup = {
                 "string.empty": "Admin username admin tidak boleh kosong",
                 "string.max": "Admin username admin tidak boleh lebih dari 50 kaAdmin username admin tidak boleh lebih dari 50 karakterrakter",
                 "any.required": "Admin username admin wajib diisi"
+            }),
+            admin_email: Joi.string().trim().email().max(100).required().external(uniqueEmail).messages({
+                "string.base": "Email harus berupa teks.",
+                "string.empty": "Email tidak boleh kosong.",
+                "string.email": "Format email tidak valid.",
+                "string.max": "Email tidak boleh lebih dari 100 karakter.",
+                "any.required": "Email wajib diisi."
             }),
             admin_password: Joi.string()
                 .trim()
@@ -111,14 +139,23 @@ const changePassword = {
         .options({ stripUnknown: true })
 };
 
+const forgotPassword = {
+    body: Joi.object()
+        .keys({
+            admin_email: Joi.string().trim().email().max(100).required().messages({
+                "string.base": "Email harus berupa teks.",
+                "string.empty": "Email tidak boleh kosong.",
+                "string.email": "Format email tidak valid.",
+                "string.max": "Email tidak boleh lebih dari 100 karakter.",
+                "any.required": "Email wajib diisi."
+            })
+        })
+        .options({ stripUnknown: true })
+};
+
 const resetPassword = {
     body: Joi.object()
         .keys({
-            admin_username: Joi.string().trim().required().messages({
-                "string.base": "Username harus berupa teks.",
-                "string.empty": "Username tidak boleh kosong.",
-                "any.required": "Username wajib diisi."
-            }),
             new_password: Joi.string()
                 .trim()
                 .min(8)
@@ -149,4 +186,4 @@ const resetPassword = {
         .options({ stripUnknown: true })
 };
 
-export default { signup, signin, changePassword, resetPassword };
+export default { signup, signin, changePassword, forgotPassword, resetPassword };

@@ -17,6 +17,7 @@ router.patch(
     sanitizeAndValidate(authValidation.changePassword),
     control(authController.changePassword)
 );
-router.patch("/reset-password", middlewareHandler("guest"), sanitizeAndValidate(authValidation.resetPassword), control(authController.resetPassword));
+router.post("/forgot-password", middlewareHandler("guest"), sanitizeAndValidate(authValidation.forgotPassword), control(authController.forgotPassword));
+router.patch("/reset-password/:token", middlewareHandler("guest"), sanitizeAndValidate(authValidation.resetPassword), control(authController.resetPassword));
 
 export default router;

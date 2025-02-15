@@ -53,6 +53,7 @@ model pelanggan_data {
 model admin {
   admin_id       Int    @id @default(autoincrement())
   admin_username String @db.VarChar(50) @unique
+  admin_email String @db.VarChar(100) @unique
   admin_password String @db.VarChar(255)
 }
 

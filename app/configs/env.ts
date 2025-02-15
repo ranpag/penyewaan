@@ -18,6 +18,11 @@ const envValidate = Joi.object()
         CACHE_DRIVER: Joi.string().allow("").empty(""),
         CACHE_PREFIX: Joi.string().allow("").empty(""),
 
+        SMTP_HOST: Joi.string(),
+        SMTP_PORT: Joi.string(),
+        SMTP_USERNAME: Joi.string(),
+        SMTP_PASSWORD: Joi.string(),
+
         penyewaan_REDIS_URL: Joi.string(),
 
         JWT_TOKEN_SECRET_PRIVATE: Joi.string().required(),
@@ -54,6 +59,11 @@ export default {
 
     CACHE_DRIVER: env.CACHE_DRIVER,
     CACHE_PREFIX: env.CACHE_PREFIX,
+
+    SMTP_HOST: env.SMTP_HOST,
+    SMTP_PORT: env.SMTP_PORT,
+    SMTP_USERNAME: env.SMTP_USERNAME,
+    SMTP_PASSWORD: env.SMTP_PASSWORD,
 
     penyewaan_REDIS_URL: env.penyewaan_REDIS_URL,
 

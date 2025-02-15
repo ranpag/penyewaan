@@ -67,6 +67,33 @@ const verifyRefreshToken = async (refreshToken: string) => {
     }
 };
 
+const generateResetPasswordToken = (userData: Record<string, string | number>) => {
+    const expiresIn = 60 * 30;
+    return jwt.sign(userData, env.JWT_TOKEN_SECRET_PRIVATE, {
+        algorithm: "RS256",
+        expiresIn
+    });
+};
+
+const verifyResetPasswordToken = async (resetPasswordToken: string) => {
+    try {
+        return jwt.verify(resetPasswordToken, env.JWT_TOKEN_SECRET_PUBLIC, {
+            algorithms: ["RS256"]
+        });
+    } catch (err) {
+        if (err instanceof Error) {
+            if (err.name === "TokenExpiredError") {
+                throw new errorAPI("Forbidden", 403, ["Token expired"]);
+            } else if (err.name === "JsonWebTokenError") {
+                throw new errorAPI("Forbidden", 403, ["Token invalid"]);
+            }
+            throw err;
+        }
+
+        throw err;
+    }
+};
+
 const blacklistToken = async (accessToken?: string, refreshToken?: string) => {
     console.log(accessToken, refreshToken);
     try {
@@ -101,5 +128,7 @@ export default {
     verifyAccessToken,
     generateRefreshToken,
     verifyRefreshToken,
-    blacklistToken
+    blacklistToken,
+    generateResetPasswordToken,
+    verifyResetPasswordToken
 };
