@@ -85,6 +85,11 @@ const selected = async (req: Request, res: Response) => {
                 kategori: {
                     include: { _count: true }
                 },
+                alat_gambar: {
+                    include: {
+                        gambar: true
+                    }
+                },
                 _count: true
             }
         });

@@ -74,9 +74,6 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  statusCode:
-                    type: integer
-                    example: 200
                   message:
                     type: string
                     example: "Signin successfull"
@@ -92,6 +89,9 @@ paths:
                           admin_username:
                             type: string
                             example: "admin4"
+                          admin_email:
+                            type: string
+                            example: "admin4@gmail.com"
                       token:
                         type: object
                         properties:
@@ -168,6 +168,9 @@ paths:
                 admin_username:
                   type: string
                   example: "admin4"
+                admin_email:
+                  type: string
+                  example: "admin4@gmail.com"
                 admin_password:
                   type: string
                   example: "password123"
@@ -178,6 +181,7 @@ paths:
                 - admin_username
                 - admin_password
                 - confirm_password
+                - admin_email
       responses:
         201:
           description: Signup berhasil, mengembalikan data admin.
@@ -189,9 +193,6 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  statusCode:
-                    type: integer
-                    example: 200
                   message:
                     type: string
                     example: "Signin successfull"
@@ -204,6 +205,9 @@ paths:
                       admin_username:
                         type: string
                         example: "admin4"
+                      admin_email:
+                        type: string
+                        example: "admin4@gmail.com"
         400:
           description: Data yang dikirim tidak valid
           content:
@@ -227,6 +231,13 @@ paths:
                         example:
                           - "Admin Username tidak boleh kosong."
                           - "Admin username admin tidak boleh lebih dari 50 karakter."
+                      admin_email:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - "Admin Email tidak boleh kosong."
+                          - "Admin Email harus valid."
                       admin_password:
                         type: array
                         items:
@@ -315,9 +326,6 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  statusCode:
-                    type: integer
-                    example: 200
                   message:
                     type: string
                     example: "Access extended"
@@ -369,7 +377,7 @@ paths:
                         - "Refresh token wajib dikirim."
         500:
           $ref: '#/components/responses/InternalServerError'
-  /change-password:
+  /auth/change-password:
     patch:
       tags:
         - Autentikasi
@@ -404,9 +412,6 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  statusCode:
-                    type: integer
-                    example: 200
                   message:
                     type: string
                     example: "Password berhasil di ganti"
@@ -419,6 +424,9 @@ paths:
                       admin_username:
                         type: string
                         example: "admin4"
+                      admin_email:
+                        type: string
+                        example: "admin4@gmail.com"
         400:
           description: Data yang dikirim tidak valid
           content:
@@ -453,12 +461,12 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         500:
           $ref: '#/components/responses/InternalServerError'
-  /reset-password:
-    patch:
+  /auth/forgot-password:
+    post:
       tags:
         - Autentikasi
-      summary: Reset password admin
-      description: Mereset password admin dan mengembalikan data admin.
+      summary: Mengirim email untuk reset password
+      description: Mengirim link untuk reset password ke email.
       requestBody:
         required: true
         content:
@@ -466,22 +474,14 @@ paths:
             schema:
               type: object
               properties:
-                admin_username:
+                admin_email:
                   type: string
-                  example: "admin4"
-                new_password:
-                  type: string
-                  example: "password123"
-                confirm_password:
-                  type: string
-                  example: "password123"
+                  example: "admin4@gmail.com"
               required:
-                - admin_username
-                - new_password
-                - confirm_password
+                - admin_email
       responses:
-        200:
-          description: Reset passowrd berhasil, mengembalikan data admin.
+        202:
+          description: Email sedang proses pengiriman.
           content:
             application/json:
               schema:
@@ -490,21 +490,9 @@ paths:
                   success:
                     type: boolean
                     example: true
-                  statusCode:
-                    type: integer
-                    example: 200
                   message:
                     type: string
-                    example: "Reset password successfull"
-                  data:
-                    type: object
-                    properties:
-                      admin_id:
-                        type: integer
-                        example: 6
-                      admin_username:
-                        type: string
-                        example: "admin4"
+                    example: "Password reset request accepted"
         400:
           description: Data yang dikirim tidak valid
           content:
@@ -521,13 +509,79 @@ paths:
                   errors:
                     type: object
                     properties:
-                      admin_username:
+                      admin_email:
                         type: array
                         items:
                           type: string
                         example:
-                          - "Admin Username tidak boleh kosong."
-                          - "Admin username tidak ditemukan."
+                          - "Admin email tidak boleh kosong."
+                          - "Admin email harus valid."
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /auth/reset-password/{token}:
+    patch:
+      tags:
+        - Autentikasi
+      summary: Reset password admin
+      description: Mereset password admin dan mengembalikan data admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_password:
+                  type: string
+                  example: "password123"
+                confirm_password:
+                  type: string
+                  example: "password123"
+              required:
+                - new_password
+                - confirm_password
+      responses:
+        200:
+          description: Reset passowrd berhasil, mengembalikan data admin.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Reset password successfull"
+                  data:
+                    type: object
+                    properties:
+                      admin_id:
+                        type: integer
+                        example: 6
+                      admin_username:
+                        type: string
+                        example: "admin4"
+                      admin_email:
+                        type: string
+                        example: "admin4@gmail.com"
+        400:
+          description: Data yang dikirim tidak valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Validation error"
+                  errors:
+                    type: object
+                    properties:
                       new_password:
                         type: array
                         items:
@@ -862,6 +916,69 @@ paths:
       description: Menghapus informasi alat berdasarkan ID.
       parameters:
         - $ref: "#/components/parameters/AlatId"
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /alat/{id}/gambar:
+    post:
+      tags:
+        - Alat
+      security:
+        - BearerAuth: []
+      summary: Upload gambar alat
+      description: Mengunggah gambar utama dan gambar tambahan untuk alat.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                gambar_utama:
+                  type: string
+                  format: binary
+                  description: File gambar utama (single file)
+                gambar:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: File gambar tambahan (multiple file)
+      responses:
+        204:
+          description: No Content
+        401:
+          $ref: "#/components/responses/UnauthorizedError"
+        413:
+          $ref: "#/components/responses/PayloadTooLarge"
+        415:
+          $ref: "#/components/responses/UnsupportedMediaType"
+        500:
+          $ref: '#/components/responses/InternalServerError'
+  /alat/gambar/{id}:
+    delete:
+      tags:
+        - Alat
+      security:
+        - BearerAuth: []
+      summary: Hapus salah satu gambar alat
+      description: Hapus gambar tambahan untuk alat.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
       responses:
         204:
           description: No Content
@@ -1603,8 +1720,33 @@ components:
         alat_stok:
           type: integer
           example: 12
+        gambar_utama:
+          type: string
+          format: uri
+          example: "https://ceemnbyirjtuloqmzifp.supabase.co/storage/v1/object/public/penyewaan/alat/c9d4db4c-1ccb-4c49-ae38-083a7e6067f3.jpeg"
         kategori:
           $ref: "#/components/schemas/Kategori"
+        alat_gambar:
+          type: array
+          items:
+            type: object
+            properties:
+              alat_id:
+                type: integer
+                example: 11
+              gambar_id:
+                type: integer
+                example: 5
+              gambar:
+                type: object
+                properties:
+                  gambar_id:
+                    type: integer
+                    example: 5
+                  gambar:
+                    type: string
+                    format: uri
+                    example: "https://ceemnbyirjtuloqmzifp.supabase.co/storage/v1/object/public/penyewaan/alat/92635df6-87ef-4fd9-b59e-ea8a0f1bbed4.jpeg"
         _count:
           type: object
           properties:
