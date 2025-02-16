@@ -95,27 +95,43 @@ const create = async (req: Request, res: Response) => {
     const { pelanggan_data_jenis, pelanggan_data_file, ...onlyCustomer } = req.body;
 
     try {
-        const customer = await prisma.pelanggan.create({
-            data: {
-                pelanggan_data: {
-                    create: {
-                        pelanggan_data_jenis: pelanggan_data_jenis,
-                        pelanggan_data_file: pelanggan_data_file
-                    }
+        if (pelanggan_data_file && pelanggan_data_jenis) {
+            const customer = await prisma.pelanggan.create({
+                data: {
+                    pelanggan_data: {
+                        create: {
+                            pelanggan_data_jenis: pelanggan_data_jenis,
+                            pelanggan_data_file: pelanggan_data_file
+                        }
+                    },
+                    ...onlyCustomer
                 },
-                ...onlyCustomer
-            },
-            include: {
-                pelanggan_data: true,
-                _count: true
-            }
-        });
-
-        return res.status(201).json({
-            success: true,
-            message: "Success membuat pelanggan baru",
-            data: customer
-        });
+                include: {
+                    pelanggan_data: true,
+                    _count: true
+                }
+            });
+            return res.status(201).json({
+                success: true,
+                message: "Success membuat pelanggan baru",
+                data: customer
+            });
+        } else {
+            const customer = await prisma.pelanggan.create({
+                data: {
+                    ...onlyCustomer
+                },
+                include: {
+                    pelanggan_data: true,
+                    _count: true
+                }
+            });
+            return res.status(201).json({
+                success: true,
+                message: "Success membuat pelanggan baru",
+                data: customer
+            });
+        }
     } catch (err) {
         logger.error("Error during creating new customer" + err);
         throw err;
