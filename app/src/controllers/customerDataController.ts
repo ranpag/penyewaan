@@ -111,7 +111,11 @@ const update = async (req: Request, res: Response) => {
         if (!exitingCustomerData) throw new errorAPI("Customer data not found", 404);
 
         if (req.body.pelanggan_data_file && exitingCustomerData.pelanggan_data_file) {
-            deleteFile("customerData", exitingCustomerData.pelanggan_data_file.split("/").at(-1) || "a.jpg");
+            try {
+                await deleteFile("customerData", exitingCustomerData.pelanggan_data_file.split("/").at(-1) || "");
+            } catch (error) {
+                logger.error("Error during deleting images: " + error);
+            }
         }
 
         const updatedCustomerData = await prisma.pelanggan_data.update({
@@ -143,7 +147,11 @@ const destroy = async (req: Request, res: Response) => {
         if (!exitingCustomerData) throw new errorAPI("Customer data not found", 404);
 
         if (exitingCustomerData && exitingCustomerData.pelanggan_data_file) {
-            deleteFile("customerData", exitingCustomerData.pelanggan_data_file.split("/").at(-1) || "");
+            try {
+                await deleteFile("customerData", exitingCustomerData.pelanggan_data_file.split("/").at(-1) || "");
+            } catch (error) {
+                logger.error("Error during deleting images: " + error);
+            }
         }
 
         await prisma.pelanggan_data.delete({

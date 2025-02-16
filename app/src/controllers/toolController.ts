@@ -4,6 +4,7 @@ import { logger } from "@utils/logger";
 import errorAPI from "@utils/errorAPI";
 import { checkNaN } from "../utils/checkNaN";
 import { Prisma } from "@prisma/client";
+import { deleteFile } from "../services/fileService";
 
 const index = async (req: Request, res: Response) => {
     const { page, search, min_harga, max_harga, min_stok, max_stok } = req.query;
@@ -15,7 +16,7 @@ const index = async (req: Request, res: Response) => {
           : undefined;
 
     try {
-        const resultNumberParams = checkNaN({ min_harga, max_harga, min_stok, max_stok});
+        const resultNumberParams = checkNaN({ min_harga, max_harga, min_stok, max_stok });
         const whereClause: Prisma.alatWhereInput = {
             ...(keywords
                 ? {
@@ -200,11 +201,38 @@ const destroy = async (req: Request, res: Response) => {
     try {
         const resultNumberParams = checkNaN({ toolId });
 
-        await prisma.alat.delete({
-            where: {
-                alat_id: resultNumberParams.toolId
+        const alat = await prisma.alat.findUnique({
+            where: { alat_id: resultNumberParams.toolId },
+            select: {
+                alat_id: true,
+                gambar_utama: true,
+                alat_gambar: {
+                    select: {
+                        gambar: {
+                            select: { gambar: true,  gambar_id: true } 
+                        }
+                    }
+                }
             }
         });
+
+
+        if (!alat) {
+            return res.status(404).json({ message: "Alat tidak ditemukan" });
+        }
+
+        const deletePromises = alat.alat_gambar.map((img) => deleteFile("alat", img.gambar.gambar.split("/").at(-1) || ""));
+
+        if (alat.gambar_utama) {
+            deletePromises.push(deleteFile("alat", alat.gambar_utama.split("/").at(-1) || ""));
+        }
+
+        await Promise.all(deletePromises);
+
+        await prisma.$transaction([
+            prisma.gambar.deleteMany({ where: { gambar_id: { in: alat.alat_gambar.map((img) => img.gambar.gambar_id) } } }),
+            prisma.alat.delete({ where: { alat_id: resultNumberParams.toolId } })
+        ]);
 
         return res.status(204).send();
     } catch (err) {
@@ -213,4 +241,100 @@ const destroy = async (req: Request, res: Response) => {
     }
 };
 
-export default { index, selected, create, update, destroy };
+const saveUploadFile = async (req: Request, res: Response) => {
+    const { toolId } = req.params;
+
+    try {
+        const resultNumberParams = checkNaN({ toolId });
+
+        await prisma.$transaction(async (tx) => {
+            if (req.body.gambar_utama) {
+                const alat = await prisma.alat.findUnique({
+                    where: {
+                        alat_id: resultNumberParams.toolId
+                    }
+                });
+
+                if (alat && alat.gambar_utama) {
+                    try {
+                        await deleteFile("alat", alat.gambar_utama.split("/").at(-1) || "");
+                    } catch (error) {
+                        logger.error("Error during deleting images: " + error);
+                    }
+                }
+
+                await tx.alat.update({
+                    where: { alat_id: resultNumberParams.toolId },
+                    data: { gambar_utama: req.body.gambar_utama[0] }
+                });
+            }
+
+            if(req.body.gambar) {
+                await tx.gambar.createMany({
+                    data: req.body.gambar.map((link: string) => ({ gambar: link })),
+                    skipDuplicates: true
+                });
+
+                const gambarList = await tx.gambar.findMany({
+                    where: { gambar: { in: req.body.gambar } },
+                    select: { gambar_id: true }
+                });
+
+                await tx.alat_gambar.createMany({
+                    data: gambarList.map(({ gambar_id }) => ({
+                        alat_id: resultNumberParams.toolId,
+                        gambar_id
+                    })),
+                    skipDuplicates: true
+                });
+            }
+        });
+
+        return res.status(204).send();
+    } catch (err) {
+        logger.error("Error during saving images: " + err);
+        throw err;
+    }
+};
+
+const deleteGambar = async (req: Request, res: Response) => {
+    const { gambarId } = req.params;
+
+    try {
+        const resultNumberParams = checkNaN({ gambarId });
+
+        const gambar = await prisma.gambar.findUnique({
+            where: { gambar_id: resultNumberParams.gambarId }
+        });
+
+        if (!gambar) {
+            return res.status(404).json({
+                success: false,
+                message: "Gambar tidak ditemukan"
+            });
+        }
+
+        try {
+            await deleteFile("alat", gambar.gambar.split("/").at(-1) || "");
+        } catch (error) {
+            logger.error("Error deleting image from S3: " + error);
+        }
+
+        await prisma.$transaction([
+            prisma.alat_gambar.deleteMany({
+                where: { gambar_id: resultNumberParams.gambarId }
+            }),
+            prisma.gambar.delete({
+                where: { gambar_id: resultNumberParams.gambarId }
+            })
+        ]);
+
+        return res.status(204).send();
+    } catch (err) {
+        logger.error("Error deleting gambar: " + err);
+        throw err;
+    }
+};
+
+
+export default { index, selected, create, update, destroy, saveUploadFile, deleteGambar };

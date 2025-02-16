@@ -146,7 +146,11 @@ const update = async (req: Request, res: Response) => {
                 });
 
                 if (pelanggan_data_file && existingCustomer.pelanggan_data?.pelanggan_data_file) {
-                    deleteFile("customerData", existingCustomer.pelanggan_data?.pelanggan_data_file.split("/").at(-1) || "a.jpg");
+                    try {
+                        await deleteFile("customerData", existingCustomer.pelanggan_data?.pelanggan_data_file.split("/").at(-1) || "");
+                    } catch (error) {
+                        logger.error("Error during deleting images: " + error);
+                    }
                 }
 
                 return {
@@ -208,7 +212,11 @@ const destroy = async (req: Request, res: Response) => {
         });
 
         if (customerData && customerData.pelanggan_data_file) {
-            deleteFile("customerData", customerData.pelanggan_data_file.split("/").at(-1) || "");
+            try {
+                await deleteFile("customerData", customerData.pelanggan_data_file.split("/").at(-1) || "");
+            } catch (error) {
+                logger.error("Error during deleting images: " + error);
+            }
         }
 
         await prisma.pelanggan.delete({

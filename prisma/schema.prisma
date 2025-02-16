@@ -96,16 +96,36 @@ model kategori {
 }
 
 model alat {
-  alat_id       Int    @id @default(autoincrement())
+  alat_id          Int    @id @default(autoincrement())
   alat_kategori_id Int
-  alat_nama     String @db.VarChar(150)
-  alat_deskripsi String @db.VarChar(255)
+  alat_nama        String @db.VarChar(150)
+  alat_deskripsi   String @db.VarChar(255)
   alat_hargaperhari Int
-  alat_stok     Int
-  kategori kategori @relation(fields: [alat_kategori_id], references: [kategori_id], onDelete: Cascade, onUpdate: Cascade)
+  alat_stok        Int
+  gambar_utama     String? @db.VarChar(255)
+  kategori         kategori @relation(fields: [alat_kategori_id], references: [kategori_id], onDelete: Cascade, onUpdate: Cascade)
   penyewaan_detail penyewaan_detail[]
+
+  alat_gambar      alat_gambar[]
 
   @@index([alat_kategori_id])
   @@index([alat_nama])
+}
+
+model gambar {
+  gambar_id Int    @id @default(autoincrement())
+  gambar    String @db.VarChar(255)
+
+  alat_gambar alat_gambar[]
+}
+
+model alat_gambar {
+  alat_id   Int
+  gambar_id Int
+
+  alat   alat   @relation(fields: [alat_id], references: [alat_id], onDelete: Cascade, onUpdate: Cascade)
+  gambar gambar @relation(fields: [gambar_id], references: [gambar_id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([alat_id, gambar_id])
 }
 

@@ -43,6 +43,39 @@ export const uploadFileToS3 = (folder: string, fieldName: string) => async (req:
     }
 };
 
+export const uploadFilesToS3 = (folder: string, fieldName: string) => async (req: Request, res: Response, next: NextFunction) => {
+    const files = req.files as { [key: string]: Express.Multer.File[] } | undefined;
+
+    if (!files?.[fieldName] || files?.[fieldName].length === 0) {
+        return next();
+    }
+
+    try {
+        const uploadedFiles = await Promise.all(
+            files?.[fieldName].map(async (file) => {
+                const newFileName = uuidv4();
+                const upload = new Upload({
+                    client: clientS3,
+                    params: {
+                        Bucket: env.AWS_BUCKET_NAME,
+                        Key: `${folder}/${newFileName}.${file.mimetype.split("/")[1]}`,
+                        Body: file.buffer,
+                        ContentType: file.mimetype
+                    }
+                });
+
+                await upload.done();
+                return `${env.OBJECT_URL}/${env.AWS_BUCKET_NAME}/${folder}/${newFileName}.${file.mimetype.split("/")[1]}`;
+            })
+        );
+
+        req.body[fieldName] = uploadedFiles;
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
 export const deleteFile = async (folder: string, fileName: string) => {
     const command = new DeleteObjectCommand({
         Bucket: env.AWS_BUCKET_NAME,
@@ -101,3 +134,39 @@ export const loadFileInMemory = (fieldName: string, moreValidation?: Function) =
     }).catch(next);
     return next();
 };
+
+export const manyLoadFileInMemory = (fieldNames: string[], moreValidation?: Function) => async (req: Request, res: Response, next: NextFunction) => {
+    await new Promise<void>((resolve, reject) => {
+        const fieldsConfig = fieldNames.map((name) => ({ name, maxCount: 10 }));
+
+        memoryUpload.fields(fieldsConfig)(req, res, (err) => {
+            if (err instanceof multer.MulterError) {
+                if (err.code === "LIMIT_FILE_SIZE") {
+                    return reject(
+                        new errorAPI("Payload Too Large.", 413, {
+                            files: ["File yang dikirim terlalu besar. Maximum size 5MB."]
+                        })
+                    );
+                }
+            } else if (err) {
+                return reject(err);
+            }
+
+            const files = req.files as { [key: string]: Express.Multer.File[] } | undefined;
+
+            if (moreValidation) {
+                try {
+                    for (const fieldName of fieldNames) {
+                        moreValidation(req.body[`${fieldName}_jenis`], files?.[fieldName] ?? []);
+                    }
+                } catch (err) {
+                    return next(err);
+                }
+            }
+
+            resolve();
+        });
+    }).catch(next);
+    return next();
+};
+
