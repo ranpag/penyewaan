@@ -145,6 +145,19 @@ const update = async (req: Request, res: Response) => {
     try {
         const resultNumberParams = checkNaN({ customerId });
 
+        if (onlyCustomer.pelanggan_email) {
+            const uniqueCustomer = await prisma.pelanggan.findFirst({
+                where: {
+                    pelanggan_email: onlyCustomer.pelanggan_email,
+                    NOT: { pelanggan_id: resultNumberParams.customerId }
+                }
+            });
+
+            if (uniqueCustomer) {
+                throw new errorAPI("Validation Error", 400, { pelanggan_email: ["Email pelanggan sudah digunakan"] });
+            }
+        }
+
         const result = await prisma.$transaction(async (tx) => {
             const existingCustomer = await tx.pelanggan.update({
                 data: onlyCustomer,
@@ -226,6 +239,10 @@ const destroy = async (req: Request, res: Response) => {
                 pelanggan_data_pelanggan_id: resultNumberParams.customerId
             }
         });
+
+        if (!customerData) {
+            throw new errorAPI("Pelanggan tidak ditemukan", 404)
+        }
 
         if (customerData && customerData.pelanggan_data_file) {
             try {

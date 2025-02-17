@@ -62,10 +62,16 @@ const destroy = async (req: Request, res: Response) => {
 
         if (!admin) throw new errorAPI("Forbidden", 403, ["You can access this resources"]);
 
-        console.log(admin)
-
         const isPasswordValid = await bcrypt.compare(your_password, admin?.admin_password);
         if (!isPasswordValid) throw new errorAPI("Unauthorized", 401, ["Invalid credentials"]);
+
+        const adminToDelete = await prisma.admin.findUnique({
+            where: { admin_id: req.user?.admin_id }
+        });
+
+        if (!adminToDelete) {
+            throw new errorAPI("Admin tidak ditemukan", 404);
+        }
 
         await prisma.admin.delete({
             where: {

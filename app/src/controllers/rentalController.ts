@@ -310,6 +310,14 @@ const destroy = async (req: Request, res: Response) => {
     try {
         const resultNumberParams = checkNaN({ rentalId });
 
+        const rental = await prisma.penyewaan.findUnique({
+            where: { penyewaan_id: resultNumberParams.rentalId }
+        });
+
+        if (!rental) {
+            throw new errorAPI("Penyewaan tidak ditemukan", 404);
+        }
+
         await prisma.$transaction(async (tx) => {
             const rentalDetails = await tx.penyewaan_detail.findMany({
                 where: { penyewaan_detail_penyewaan_id: resultNumberParams.rentalId }
@@ -344,6 +352,14 @@ const destroyNotRestoreToolsStock = async (req: Request, res: Response) => {
     const { rentalId } = req.params;
     try {
         const resultNumberParams = checkNaN({ rentalId });
+
+        const rental = await prisma.penyewaan.findUnique({
+            where: { penyewaan_id: resultNumberParams.rentalId }
+        });
+
+        if (!rental) {
+            throw new errorAPI("Penyewaan tidak ditemukan", 404);
+        }
 
         await prisma.penyewaan.delete({
             where: {

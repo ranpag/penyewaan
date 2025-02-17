@@ -144,6 +144,10 @@ const destroy = async (req: Request, res: Response) => {
             }
         });
 
+        if (!exitingCustomerData) {
+            throw new errorAPI("Pelanggan data tidak ditemukan", 404);
+        }
+
         if (!exitingCustomerData) throw new errorAPI("Customer data not found", 404);
 
         if (exitingCustomerData && exitingCustomerData.pelanggan_data_file) {

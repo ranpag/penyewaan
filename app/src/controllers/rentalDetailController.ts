@@ -273,6 +273,14 @@ const destroyNotRestoreToolsStock = async (req: Request, res: Response) => {
     try {
         const resultNumberParams = checkNaN({ detailId });
 
+        const rentalDetail = await prisma.penyewaan_detail.findUnique({
+            where: { penyewaan_detail_id: resultNumberParams.detailId }
+        });
+
+        if (!rentalDetail) {
+            throw new errorAPI("Penyewaan detail tidak ditemukan", 404);
+        }
+
         await prisma.penyewaan_detail.delete({
             where: {
                 penyewaan_detail_id: resultNumberParams.detailId

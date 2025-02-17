@@ -1,5 +1,27 @@
 import Joi from "joi";
 import { customerDataValidation } from "./customerDataValidation";
+import prisma from "../database/prisma";
+
+const uniqueEmail = async (value: string, _helper: Joi.ExternalHelpers) => {
+    const pelanggan_email = await prisma.pelanggan.findUnique({
+        where: { pelanggan_email: value }
+    });
+    if (pelanggan_email) {
+        throw new Joi.ValidationError(
+            "Email sudah ada",
+            [
+                {
+                    message: "Email sudah ada",
+                    path: ["body", "pelanggan_email"],
+                    type: "unique",
+                    context: { label: "pelanggan_email", key: "pelanggan_email" }
+                }
+            ],
+            value
+        );
+    }
+    return value;
+};
 
 const selectedCustomer = {
     params: Joi.object().keys({
@@ -34,7 +56,7 @@ const createCustomer = {
                     "string.pattern.base": "Nomor telepon harus berisi 10-13 digit angka.",
                     "any.required": "Nomor telepon wajib diisi."
                 }),
-            pelanggan_email: Joi.string().trim().email().max(100).required().messages({
+            pelanggan_email: Joi.string().trim().email().max(100).required().external(uniqueEmail).messages({
                 "string.base": "Email pelanggan harus berupa teks.",
                 "string.empty": "Email pelanggan tidak boleh kosong.",
                 "string.email": "Format email tidak valid.",

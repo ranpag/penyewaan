@@ -127,6 +127,14 @@ const destroy = async (req: Request, res: Response) => {
     try {
         const resultNumberParams = checkNaN({ categoryId });
 
+        const category = await prisma.kategori.findUnique({
+            where: { kategori_id: resultNumberParams.categoryId }
+        });
+
+        if (!category) {
+            throw new errorAPI("Kategori tidak ditemukan", 404);
+        }
+
         await prisma.kategori.delete({
             where: {
                 kategori_id: resultNumberParams.categoryId
