@@ -21,7 +21,7 @@ router.post(
 router.put(
     "/:customerId",
     middlewareHandler("auth"),
-    loadFileInMemory("pelanggan_data_file", customerValidation.customerDataValidation),
+    loadFileInMemory("pelanggan_data_file"),
     sanitizeAndValidate(customerValidation.updateCustomer),
     uploadFileToS3("customerData", "pelanggan_data_file"),
     control(customerController.update)

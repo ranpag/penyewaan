@@ -189,8 +189,11 @@ const update = async (req: Request, res: Response) => {
             }
 
             if ((pelanggan_data_jenis || pelanggan_data_file) && !existingCustomer.pelanggan_data) {
-                if (pelanggan_data_file || pelanggan_data_jenis) {
-                    throw new errorAPI("Validation error", 400, ["Pelanggan data jenis dan Pelanggan data file harus ada"]);
+                if (!pelanggan_data_file && !pelanggan_data_jenis) {
+                    throw new errorAPI("Validation error", 400, {
+                        pelanggan_data_jenis: ["Pelanggan data jenis dan Pelanggan data file harus ada"],
+                        pelanggan_data_file: ["Pelanggan data jenis dan Pelanggan data file harus ada"]
+                    });
                 }
 
                 const newCustomerData = await tx.pelanggan_data.create({
