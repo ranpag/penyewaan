@@ -137,7 +137,6 @@ const passwordReset = (link: string) => {
             .button {
             display: inline-block;
             background-color: #007bff;
-            color: #ffffff;
             text-decoration: none;
             padding: 10px 20px;
             font-size: 16px;
@@ -150,14 +149,17 @@ const passwordReset = (link: string) => {
             .footer {
             margin-top: 30px;
             font-size: 14px;
-            color: #000;
+            color: #000000;
+            }
+            span {
+            color: #ffffff;
             }
         </style>
         </head>
             <body>
                 <div class="email-container">
                     <div class="logo">
-                    <img src="https://ceemnbyirjtuloqmzifp.supabase.co/storage/v1/object/public/penyewaan//camp.jpg" alt="Logo">
+                    <img src="https://pratadev.my.id/camp.png" alt="Logo">
                     </div>
                     <div class="title">Reset your password</div>
                     <div class="content">
@@ -166,9 +168,9 @@ const passwordReset = (link: string) => {
                     <div class="content">
                         Please tap the button below to choose a new password.
                     </div>
-                    <a href="${link}" class="button">Confirm</a>
+                    <a href="${link}" class="button"><span class>Confirm</span></a>
                     <div class="footer">
-                        Express | If you do not want to change your password or didn't request a reset, you can ignore and delete this email.
+                        CAMP-TOOLS | If you do not want to change your password or didn't request a reset, you can ignore and delete this email.
                     </div>
                 </div>
             </body>

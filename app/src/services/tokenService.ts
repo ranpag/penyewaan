@@ -4,7 +4,7 @@ import errorAPI from "@utils/errorAPI";
 import cache from "./cacheService";
 
 const generateAccessToken = (userData: Record<string, string | number>) => {
-    const expiresIn = env.ACCESS_TOKEN_EXPIRATION_MINUTES * 60;
+    const expiresIn = env.ACCESS_TOKEN_EXPIRATION_MINUTES * 60 * 3;
     return jwt.sign(userData, env.JWT_TOKEN_SECRET_PRIVATE, {
         algorithm: "RS256",
         expiresIn

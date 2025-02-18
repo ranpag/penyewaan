@@ -4,6 +4,7 @@ import errorAPI from "../utils/errorAPI";
 import { checkNaN } from "../utils/checkNaN";
 import prisma from "../database/prisma";
 import { Prisma } from "@prisma/client";
+import dayjs from "dayjs";
 
 const index = async (req: Request, res: Response) => {
     const { page, penyewaan_id } = req.query;
@@ -100,32 +101,54 @@ const create = async (req: Request, res: Response) => {
     const numberBodyValue = req.body;
 
     try {
-        const { penyewaan_detail_penyewaan_id, penyewaan_detail_alat_id, penyewaan_detail_jumlah, penyewaan_detail_subharga } = checkNaN({
+        const { penyewaan_detail_penyewaan_id, penyewaan_detail_alat_id, penyewaan_detail_jumlah } = checkNaN({
             ...numberBodyValue
         });
-        const detail = await prisma.penyewaan_detail.create({
-            data: {
-                penyewaan_detail_penyewaan_id,
-                penyewaan_detail_alat_id,
-                penyewaan_detail_jumlah,
-                penyewaan_detail_subharga
-            },
-            include: {
-                alat: {
-                    select: {
-                        alat_id: true,
-                        alat_nama: true,
-                        alat_hargaperhari: true,
-                        kategori: true
+
+        const result = await prisma.$transaction(async (tx) => {
+            const rental = await tx.penyewaan.findUnique({
+                where: { penyewaan_id: penyewaan_detail_penyewaan_id }
+            });
+
+            const tool = await tx.alat.findUnique({
+                where: { alat_id: penyewaan_detail_alat_id }
+            });
+
+            const rentalDate = dayjs(rental?.penyewaan_tglsewa).toISOString();
+            const rentalReturnDate = dayjs(rental?.penyewaan_tglkembali).toISOString();
+            const diffInDays = dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day");
+
+            const detail = await tx.penyewaan_detail.create({
+                data: {
+                    penyewaan_detail_penyewaan_id,
+                    penyewaan_detail_alat_id,
+                    penyewaan_detail_jumlah,
+                    penyewaan_detail_subharga: penyewaan_detail_jumlah * tool?.alat_hargaperhari! * diffInDays
+                },
+                include: {
+                    alat: {
+                        select: {
+                            alat_id: true,
+                            alat_nama: true,
+                            alat_hargaperhari: true,
+                            kategori: true
+                        }
                     }
                 }
-            }
-        });
+            });
+
+            await tx.penyewaan.update({
+                where: { penyewaan_id: penyewaan_detail_penyewaan_id },
+                data: { penyewaan_totalharga: { increment: detail.penyewaan_detail_subharga } }
+            });
+
+            return detail
+        })
 
         return res.status(201).json({
             success: true,
             message: "Success membuat penyewaan detail baru",
-            data: detail
+            data: result
         });
     } catch (err) {
         logger.error("Error during creating penyewaan detail" + err);
@@ -147,7 +170,8 @@ const update = async (req: Request, res: Response) => {
 
         const detail = await prisma.$transaction(async (tx) => {
             const rentalDetails = await tx.penyewaan_detail.findUnique({
-                where: { penyewaan_detail_id: resultNumberParams.detailId }
+                where: { penyewaan_detail_id: resultNumberParams.detailId },
+                include: { penyewaan: true }
             });
 
             if (!rentalDetails) throw new errorAPI("Penyewaan detail tidak ditemukan", 404);
@@ -173,6 +197,10 @@ const update = async (req: Request, res: Response) => {
                 }
             });
 
+            const rentalDate = dayjs(rentalDetails?.penyewaan.penyewaan_tglsewa).toISOString();
+            const rentalReturnDate = dayjs(rentalDetails?.penyewaan.penyewaan_tglkembali).toISOString();
+            const diffInDays = dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day");
+
             const updatedRentalDetail = await tx.penyewaan_detail.update({
                 where: {
                     penyewaan_detail_id: resultNumberParams.detailId
@@ -180,7 +208,9 @@ const update = async (req: Request, res: Response) => {
                 data: {
                     ...resultNumberBody,
                     penyewaan_detail_subharga:
-                        stockReductionTool.alat_hargaperhari * (resultNumberBody.penyewaan_detail_jumlah || rentalDetails.penyewaan_detail_jumlah)
+                        stockReductionTool.alat_hargaperhari *
+                        (resultNumberBody.penyewaan_detail_jumlah || rentalDetails.penyewaan_detail_jumlah) *
+                        diffInDays
                 }
             });
 

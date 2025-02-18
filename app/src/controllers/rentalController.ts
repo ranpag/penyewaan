@@ -112,6 +112,7 @@ const create = async (req: Request, res: Response) => {
     const { daftar_alat, penyewaan_pelanggan_id, penyewaan_tglkembali, ...rentalData } = req.body;
     const rentalDate = dayjs().toISOString();
     const rentalReturnDate = dayjs(penyewaan_tglkembali).toISOString();
+    const diffInDays = dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day");
 
     try {
         const resultNumberParams = checkNaN({ penyewaan_pelanggan_id });
@@ -139,7 +140,7 @@ const create = async (req: Request, res: Response) => {
             const rentalDetail = await Promise.all(
                 daftar_alat.map(async (item) => {
                     const tool = tools.find((tool) => tool.alat_id === Number(item.alat_id));
-                    const subharga = tool ? tool.alat_hargaperhari * Number(item.jumlah) : 0;
+                    const subharga = tool ? tool.alat_hargaperhari * Number(item.jumlah) * diffInDays : 0;
 
                     if (tool) {
                         await tx.alat.update({
@@ -237,10 +238,12 @@ const update = async (req: Request, res: Response) => {
                     where: { alat_id: { in: toolIds } }
                 });
 
+                const diffInDays = dayjs(existingRental.penyewaan_tglkembali).diff(dayjs(existingRental.penyewaan_tglsewa), "day");
+
                 const rentalDetail = await Promise.all(
                     daftar_alat.map(async (item) => {
                         const tool = tools.find((tool) => tool.alat_id === Number(item.alat_id));
-                        const subharga = tool ? tool.alat_hargaperhari * Number(item.jumlah) : 0;
+                        const subharga = tool ? tool.alat_hargaperhari * Number(item.jumlah) * diffInDays : 0;
                         totalHarga += subharga;
 
                         if (tool) {
