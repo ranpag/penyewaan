@@ -114,6 +114,10 @@ const create = async (req: Request, res: Response) => {
                 where: { alat_id: penyewaan_detail_alat_id }
             });
 
+            if (!tool) {
+                throw new errorAPI("Not Found", 404, { penyewaan_detail_alat_id: ["Alat tidak ditemukan"] });
+            }
+
             const rentalDate = dayjs(rental?.penyewaan_tglsewa).toISOString();
             const rentalReturnDate = dayjs(rental?.penyewaan_tglkembali).toISOString();
             const diffInDays = dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day");
@@ -123,7 +127,7 @@ const create = async (req: Request, res: Response) => {
                     penyewaan_detail_penyewaan_id,
                     penyewaan_detail_alat_id,
                     penyewaan_detail_jumlah,
-                    penyewaan_detail_subharga: penyewaan_detail_jumlah * tool?.alat_hargaperhari! * diffInDays
+                    penyewaan_detail_subharga: penyewaan_detail_jumlah * tool.alat_hargaperhari! * diffInDays
                 },
                 include: {
                     alat: {
@@ -135,6 +139,11 @@ const create = async (req: Request, res: Response) => {
                         }
                     }
                 }
+            });
+
+            await tx.alat.update({
+                where: { alat_id: tool.alat_id },
+                data: { alat_stok: { decrement: penyewaan_detail_jumlah } }
             });
 
             await tx.penyewaan.update({
