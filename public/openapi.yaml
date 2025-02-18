@@ -821,6 +821,13 @@ paths:
             example: 1
           required: false
           description: Maximal stok alat untuk di filter
+        - in: query
+          name: kategori_id
+          schema:
+            type: integer
+            example: 12
+          required: false
+          description: Filter alat by kategori id
       responses:
         200:
           $ref: '#/components/responses/AlatAll'
@@ -1248,6 +1255,68 @@ paths:
       parameters:
         - $ref: "#/components/parameters/PageQuery"
         - $ref: "#/components/parameters/SearchQuery"
+        - name: min_totalharga
+          in: query
+          description: Filter berdasarkan total harga minimum.
+          required: false
+          schema:
+            type: number
+            example: 10000
+        - name: max_totalharga
+          in: query
+          description: Filter berdasarkan total harga maksimum.
+          required: false
+          schema:
+            type: number
+            example: 30000
+        - name: stts_pembayaran
+          in: query
+          description: Filter berdasarkan status pembayaran.
+          required: false
+          schema:
+            type: string
+            enum: ["LUNAS", "DP", "BELUM_DIBAYAR"]
+            example: LUNAS
+        - name: stts_pengembalian
+          in: query
+          description: Filter berdasarkan status pembayaran.
+          required: false
+          schema:
+            type: string
+            enum: ["BELUM_KEMBALI", "SUDAH_KEMBALI"]
+            example: BELUM_KEMBALI
+        - name: min_sewa
+          in: query
+          description: Filter berdasarkan tanggal sewa minimum.
+          required: false
+          schema:
+            type: string
+            format: date
+            example: 2000-12-12
+        - name: max_sewa
+          in: query
+          description: Filter berdasarkan tanggal sewa minimum.
+          required: false
+          schema:
+            type: string
+            format: date
+            example: 2000-12-12
+        - name: min_kembali
+          in: query
+          description: Filter berdasarkan tanggal kembali minimum.
+          required: false
+          schema:
+            type: string
+            format: date
+            example: 2000-12-12
+        - name: max_kembali
+          in: query
+          description: Filter berdasarkan tanggal kembali minimum.
+          required: false
+          schema:
+            type: string
+            format: date
+            example: 2000-12-12
       responses:
         200:
           $ref: '#/components/responses/PenyewaanAll'
