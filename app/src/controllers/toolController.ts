@@ -7,7 +7,7 @@ import { Prisma } from "@prisma/client";
 import { deleteFile } from "../services/fileService";
 
 const index = async (req: Request, res: Response) => {
-    const { page, search, min_harga, max_harga, min_stok, max_stok } = req.query;
+    const { page, search, min_harga, max_harga, min_stok, max_stok, kategori_id } = req.query;
     const limit = 25;
     const keywords = Array.isArray(search)
         ? search.map((item) => (typeof item === "string" ? item : undefined)).filter((e) => String(e).trim())
@@ -16,7 +16,7 @@ const index = async (req: Request, res: Response) => {
           : undefined;
 
     try {
-        const resultNumberParams = checkNaN({ min_harga, max_harga, min_stok, max_stok });
+        const resultNumberQuery = checkNaN({ min_harga, max_harga, min_stok, max_stok, kategori_id });
         const whereClause: Prisma.alatWhereInput = {
             ...(keywords
                 ? {
@@ -26,10 +26,11 @@ const index = async (req: Request, res: Response) => {
                       ])
                   }
                 : {}),
-            ...(resultNumberParams.min_harga ? { alat_hargaperhari: { gte: Number(min_harga) } } : {}),
-            ...(resultNumberParams.max_harga ? { alat_hargaperhari: { lte: Number(max_harga) } } : {}),
-            ...(resultNumberParams.min_stok ? { alat_stok: { gte: Number(min_stok) } } : {}),
-            ...(resultNumberParams.max_stok ? { alat_stok: { lte: Number(max_stok) } } : {})
+            ...(resultNumberQuery.min_harga ? { alat_hargaperhari: { gte: Number(min_harga) } } : {}),
+            ...(resultNumberQuery.max_harga ? { alat_hargaperhari: { lte: Number(max_harga) } } : {}),
+            ...(resultNumberQuery.min_stok ? { alat_stok: { gte: Number(min_stok) } } : {}),
+            ...(resultNumberQuery.max_stok ? { alat_stok: { lte: Number(max_stok) } } : {}),
+            ...(resultNumberQuery.kategori_id ? { alat_kategori_id: { lte: Number(kategori_id) } } : {})
         };
 
         const tools = await prisma.alat.findMany({

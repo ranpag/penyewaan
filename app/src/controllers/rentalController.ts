@@ -4,10 +4,10 @@ import { Request, Response } from "express";
 import prisma from "~/src/database/prisma";
 import dayjs from "dayjs";
 import { checkNaN } from "../utils/checkNaN";
-import { Prisma } from "@prisma/client";
+import { Prisma, status_kembali, status_pembayaran } from "@prisma/client";
 
 const index = async (req: Request, res: Response) => {
-    const { page, search } = req.query;
+    const { page, search, min_totalharga, max_totalharga, stts_pembayaran, stts_pengembalian, min_sewa, max_sewa, min_kembali, max_kembali} = req.query;
     const limit = 25;
     const keywords = Array.isArray(search)
         ? search.map((item) => (typeof item === "string" ? item : undefined)).filter((e) => String(e).trim())
@@ -16,13 +16,31 @@ const index = async (req: Request, res: Response) => {
           : undefined;
 
     try {
+        const resultNumberQuery = checkNaN({ min_totalharga, max_totalharga });
+        const whereClause: Prisma.penyewaanWhereInput = {
+            ...(keywords
+                ? {
+                      OR: keywords.flatMap((keyword) => [
+                          { pelanggan: { pelanggan_nama: { contains: keyword, mode: "insensitive" } } },
+                          { pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }
+                      ])
+                  }
+                : {}),
+            ...(resultNumberQuery.min_totalharga ? { penyewaan_totalharga: { gte: Number(min_totalharga) } } : {}),
+            ...(resultNumberQuery.max_totalharga ? { penyewaan_totalharga: { lte: Number(max_totalharga) } } : {}),
+            ...(stts_pembayaran && stts_pembayaran !== ""
+                ? { penyewaan_sttspembayaran: stts_pembayaran.toString().toUpperCase() as status_pembayaran }
+                : {}),
+            ...(stts_pengembalian && stts_pengembalian !== ""
+                ? { penyewaan_sttskembali: stts_pengembalian.toString().toUpperCase() as status_kembali }
+                : {}),
+            ...(min_sewa ? { penyewaan_tglsewa: { gte: dayjs(min_sewa.toString()).toDate() } } : {}),
+            ...(max_sewa ? { penyewaan_tglsewa: { lte: dayjs(max_sewa.toString()).toDate() } } : {}),
+            ...(min_kembali ? { penyewaan_tglkembali: { gte: dayjs(min_kembali.toString()).toDate() } } : {}),
+            ...(max_kembali ? { penyewaan_tglkembali: { lte: dayjs(max_kembali.toString()).toDate() } } : {})
+        };
         const rentals = await prisma.penyewaan.findMany({
-            where: {
-                OR: keywords?.flatMap((keyword) => [
-                    { pelanggan: { pelanggan_nama: { contains: keyword, mode: "insensitive" } } },
-                    { pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }
-                ])
-            },
+            where: whereClause,
             include: {
                 _count: true,
                 pelanggan: {
