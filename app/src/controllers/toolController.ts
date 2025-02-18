@@ -30,7 +30,7 @@ const index = async (req: Request, res: Response) => {
             ...(resultNumberQuery.max_harga ? { alat_hargaperhari: { lte: Number(max_harga) } } : {}),
             ...(resultNumberQuery.min_stok ? { alat_stok: { gte: Number(min_stok) } } : {}),
             ...(resultNumberQuery.max_stok ? { alat_stok: { lte: Number(max_stok) } } : {}),
-            ...(resultNumberQuery.kategori_id ? { alat_kategori_id: { lte: Number(kategori_id) } } : {})
+            ...(resultNumberQuery.kategori_id ? { alat_kategori_id: Number(kategori_id) } : {})
         };
 
         const tools = await prisma.alat.findMany({
