@@ -8,7 +8,7 @@ import { loadFileInMemory, uploadFileToS3 } from "@services/fileService";
 
 export const router = Router();
 
-router.get("/", control(customerController.index));
+router.get("/", middlewareHandler("auth"), control(customerController.index));
 router.get("/:customerId", middlewareHandler("auth"), sanitizeAndValidate(customerValidation.selectedCustomer), control(customerController.selected));
 router.post(
     "/",

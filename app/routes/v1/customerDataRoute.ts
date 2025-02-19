@@ -8,7 +8,7 @@ import customerDataValidation from "~/src/validations/customerDataValidation";
 
 const router = Router();
 
-router.get("/", control(customerDataController.index));
+router.get("/", middlewareHandler("auth"), control(customerDataController.index));
 router.get(
     "/:customerDataId",
     middlewareHandler("auth"),

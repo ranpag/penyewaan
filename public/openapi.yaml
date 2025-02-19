@@ -968,7 +968,7 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         413:
           $ref: "#/components/responses/PayloadTooLarge"
-        415:
+        422:
           $ref: "#/components/responses/UnsupportedMediaType"
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -997,6 +997,8 @@ paths:
     get:
       tags:
         - Pelanggan
+      security:
+        - BearerAuth: []
       summary: Ambil semua pelanggan
       description: Mengembalikan daftar semua pelanggan yang tersedia.
       parameters:
@@ -1025,7 +1027,7 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         413:
           $ref: "#/components/responses/PayloadTooLarge"
-        415:
+        422:
           $ref: "#/components/responses/UnsupportedMediaType"
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -1070,7 +1072,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         413:
           $ref: "#/components/responses/PayloadTooLarge"
-        415:
+        422:
           $ref: "#/components/responses/UnsupportedMediaType"
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -1096,7 +1098,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         413:
           $ref: "#/components/responses/PayloadTooLarge"
-        415:
+        422:
           $ref: "#/components/responses/UnsupportedMediaType"
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -1120,6 +1122,8 @@ paths:
     get:
       tags:
         - Data Pelanggan
+      security:
+        - BearerAuth: []
       summary: Ambil semua data pelanggan
       description: Mengembalikan daftar semua data pelanggan yang tersedia.
       parameters:
@@ -1155,7 +1159,7 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         413:
           $ref: "#/components/responses/PayloadTooLarge"
-        415:
+        422:
           $ref: "#/components/responses/UnsupportedMediaType"
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -1200,7 +1204,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         413:
           $ref: "#/components/responses/PayloadTooLarge"
-        415:
+        422:
           $ref: "#/components/responses/UnsupportedMediaType"
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -1226,7 +1230,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         413:
           $ref: "#/components/responses/PayloadTooLarge"
-        415:
+        422:
           $ref: "#/components/responses/UnsupportedMediaType"
         500:
           $ref: '#/components/responses/InternalServerError'
@@ -1250,6 +1254,8 @@ paths:
     get:
       tags:
         - Penyewaan
+      security:
+        - BearerAuth: []
       summary: Ambil semua penyewaan
       description: Mengembalikan daftar semua penyewaan yang tersedia.
       parameters:
@@ -1437,7 +1443,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalServerError'
   /penyewaan/{id}/selesai:
-    patch:
+    post:
       tags:
         - Penyewaan
       summary: Selesaikan penyewaan
@@ -1457,6 +1463,8 @@ paths:
     get:
       tags:
         - Detail Penyewaan
+      security:
+        - BearerAuth: []
       summary: Ambil semua detail penyewaan
       description: Mengembalikan daftar semua detail penyewaan yang tersedia.
       parameters:
@@ -2429,6 +2437,9 @@ components:
             pelanggan_nama:
               type: string
               example: Hatsune Miku
+            pelanggan_email:
+              type: string
+              example: hatsune@vocaloid.jp
     DataPenyewaanCreateRequest:
       type: object
       properties:

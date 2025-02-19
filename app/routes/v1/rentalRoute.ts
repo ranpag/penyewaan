@@ -7,7 +7,7 @@ import rentalValidation from "@validations/rentalValidation";
 
 const router = Router();
 
-router.get("/", control(rentalController.index));
+router.get("/", middlewareHandler("auth"), control(rentalController.index));
 router.get("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.selectedRental), control(rentalController.selected));
 router.post("/", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.createRental), control(rentalController.create));
 router.put("/:rentalId", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.updateRental), control(rentalController.update));
@@ -19,6 +19,6 @@ router.delete(
     sanitizeAndValidate(rentalValidation.destroyRental),
     control(rentalController.destroyNotRestoreToolsStock)
 );
-router.patch("/:rentalId/clear", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.selectedRental), control(rentalController.clear));
+router.post("/:rentalId/selesai", middlewareHandler("auth"), sanitizeAndValidate(rentalValidation.selectedRental), control(rentalController.clear));
 
 export default router;

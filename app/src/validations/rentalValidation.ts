@@ -71,8 +71,9 @@ const createRental = {
                 "number.positive": "ID pelanggan harus bernilai positif.",
                 "any.required": "ID pelanggan wajib diisi."
             }),
-            penyewaan_tglkembali: Joi.date().iso().required().messages({
+            penyewaan_tglkembali: Joi.date().greater("now").iso().required().messages({
                 "date.base": "Tanggal kembali harus berupa format tanggal yang valid.",
+                "date.greater": "Tanggal kembali harus diatas tanggal sekarang.",
                 "date.format": "Format tanggal kembali harus dalam format ISO.",
                 "any.required": "Tanggal kembali wajib diisi."
             }),

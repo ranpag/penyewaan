@@ -118,9 +118,15 @@ const create = async (req: Request, res: Response) => {
                 throw new errorAPI("Not Found", 404, { penyewaan_detail_alat_id: ["Alat tidak ditemukan"] });
             }
 
+            if (tool.alat_stok < penyewaan_detail_jumlah) {
+                throw new errorAPI("Validation error", 400, {
+                    penyewaan_detail_alat_id: [`Stok alat tidak mencukupi, stok tersisa ${tool.alat_stok}`]
+                });
+            }
+
             const rentalDate = dayjs(rental?.penyewaan_tglsewa).toISOString();
             const rentalReturnDate = dayjs(rental?.penyewaan_tglkembali).toISOString();
-            const diffInDays = dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day");
+            const diffInDays = Math.ceil(Math.max(dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day", true), 1));
 
             const detail = await tx.penyewaan_detail.create({
                 data: {
@@ -151,8 +157,8 @@ const create = async (req: Request, res: Response) => {
                 data: { penyewaan_totalharga: { increment: detail.penyewaan_detail_subharga } }
             });
 
-            return detail
-        })
+            return detail;
+        });
 
         return res.status(201).json({
             success: true,
@@ -184,11 +190,27 @@ const update = async (req: Request, res: Response) => {
             });
 
             if (!rentalDetails) throw new errorAPI("Penyewaan detail tidak ditemukan", 404);
+            if (resultNumberBody.penyewaan_detail_alat_id) {
+                const tool = await tx.alat.findUnique({
+                    where: { alat_id: resultNumberBody.penyewaan_detail_alat_id }
+                });
+
+                if (!tool) {
+                    throw new errorAPI("Not Found", 404, { penyewaan_detail_alat_id: ["Alat tidak ditemukan"] });
+                }
+
+                if (tool.alat_stok < resultNumberBody.penyewaan_detail_jumlah) {
+                    throw new errorAPI("Validation error", 400, {
+                        penyewaan_detail_alat_id: [`Stok alat tidak mencukupi, stok tersisa ${tool.alat_stok}`]
+                    });
+                }
+            }
 
             await tx.alat.update({
                 where: { alat_id: rentalDetails.penyewaan_detail_alat_id },
                 data: { alat_stok: { increment: rentalDetails.penyewaan_detail_jumlah } }
             });
+
 
             const stockReductionTool = await tx.alat.update({
                 where: { alat_id: resultNumberBody.penyewaan_detail_alat_id || rentalDetails.penyewaan_detail_alat_id },
@@ -208,7 +230,7 @@ const update = async (req: Request, res: Response) => {
 
             const rentalDate = dayjs(rentalDetails?.penyewaan.penyewaan_tglsewa).toISOString();
             const rentalReturnDate = dayjs(rentalDetails?.penyewaan.penyewaan_tglkembali).toISOString();
-            const diffInDays = dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day");
+            const diffInDays = Math.ceil(Math.max(dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day", true), 1));
 
             const updatedRentalDetail = await tx.penyewaan_detail.update({
                 where: {

@@ -243,6 +243,17 @@ const destroy = async (req: Request, res: Response) => {
             }
         });
 
+        const customerRentalNotReturn = await prisma.penyewaan.findFirst({
+            where: {
+                penyewaan_pelanggan_id: resultNumberParams.customerId,
+                penyewaan_sttskembali: "BELUM_KEMBALI"
+            }
+        });
+
+        if (customerRentalNotReturn) {
+            throw new errorAPI("Pelanggan tidak bisa dihapus karena ada penyewaan alat yang belum kembali", 400);
+        }
+
         if (!customerData) {
             throw new errorAPI("Pelanggan tidak ditemukan", 404)
         }

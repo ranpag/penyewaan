@@ -7,7 +7,7 @@ import rentalDetailValidation from "@validations/rentalDetailValidation";
 
 const router = Router();
 
-router.get("/", control(rentalDetailController.index));
+router.get("/", middlewareHandler("auth"), control(rentalDetailController.index));
 router.get(
     "/:detailId",
     middlewareHandler("auth"),

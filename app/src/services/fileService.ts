@@ -90,7 +90,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallb
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        const error = new errorAPI("Unsupported Media Type", 415, {
+        const error = new errorAPI("Unsupported Media Type", 422, {
             pelanggan_data_file: ["Invalid file format. Only PNG, JPG, JPEG, WEBP, and AVIF yang diperbolehkan."]
         });
         cb(error);

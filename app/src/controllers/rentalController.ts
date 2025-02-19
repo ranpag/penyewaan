@@ -7,7 +7,8 @@ import { checkNaN } from "../utils/checkNaN";
 import { Prisma, status_kembali, status_pembayaran } from "@prisma/client";
 
 const index = async (req: Request, res: Response) => {
-    const { page, search, min_totalharga, max_totalharga, stts_pembayaran, stts_pengembalian, min_sewa, max_sewa, min_kembali, max_kembali} = req.query;
+    const { page, search, min_totalharga, max_totalharga, stts_pembayaran, stts_pengembalian, min_sewa, max_sewa, min_kembali, max_kembali } =
+        req.query;
     const limit = 25;
     const keywords = Array.isArray(search)
         ? search.map((item) => (typeof item === "string" ? item : undefined)).filter((e) => String(e).trim())
@@ -20,10 +21,7 @@ const index = async (req: Request, res: Response) => {
         const whereClause: Prisma.penyewaanWhereInput = {
             ...(keywords
                 ? {
-                      OR: keywords.flatMap((keyword) => [
-                          { pelanggan: { pelanggan_nama: { contains: keyword, mode: "insensitive" } } },
-                          { pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }
-                      ])
+                      OR: keywords.flatMap((keyword) => [{ pelanggan: { pelanggan_email: { contains: keyword, mode: "insensitive" } } }])
                   }
                 : {}),
             ...(resultNumberQuery.min_totalharga ? { penyewaan_totalharga: { gte: Number(min_totalharga) } } : {}),
@@ -46,7 +44,8 @@ const index = async (req: Request, res: Response) => {
                 pelanggan: {
                     select: {
                         pelanggan_id: true,
-                        pelanggan_nama: true
+                        pelanggan_nama: true,
+                        pelanggan_email: true
                     }
                 }
             },
@@ -130,7 +129,7 @@ const create = async (req: Request, res: Response) => {
     const { daftar_alat, penyewaan_pelanggan_id, penyewaan_tglkembali, ...rentalData } = req.body;
     const rentalDate = dayjs().toISOString();
     const rentalReturnDate = dayjs(penyewaan_tglkembali).toISOString();
-    const diffInDays = dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day");
+    const diffInDays = Math.ceil(Math.max(dayjs(rentalReturnDate).diff(dayjs(rentalDate), "day", true), 1));
 
     try {
         const resultNumberParams = checkNaN({ penyewaan_pelanggan_id });
@@ -154,6 +153,19 @@ const create = async (req: Request, res: Response) => {
             const tools = await tx.alat.findMany({
                 where: { alat_id: { in: toolIds } }
             });
+
+            const toolStockMap = new Map(tools.map((tool) => [tool.alat_id, tool.alat_stok]));
+
+            const isStockEnough = daftar_alat.every((item) => {
+                const availableStock = toolStockMap.get(item.alat_id) ?? 0;
+                return item.jumlah <= availableStock;
+            });
+
+            if (!isStockEnough) {
+                throw new errorAPI("Validation error", 400, {
+                    penyewaan_detail_alat_id: [`Beberapa alat tidak mencukupi stok`]
+                });
+            }
 
             const rentalDetail = await Promise.all(
                 daftar_alat.map(async (item) => {
@@ -190,7 +202,8 @@ const create = async (req: Request, res: Response) => {
                     pelanggan: {
                         select: {
                             pelanggan_id: true,
-                            pelanggan_nama: true
+                            pelanggan_nama: true,
+                            pelanggan_email: true
                         }
                     }
                 }
@@ -219,36 +232,37 @@ const update = async (req: Request, res: Response) => {
     const { rentalId } = req.params;
     const { daftar_alat, penyewaan_tglkembali, ...rentalData } = req.body;
 
-    const penyewaanId = Number(rentalId);
-
     try {
-        if (isNaN(penyewaanId)) {
-            throw new errorAPI("Invalid Rental ID", 400);
-        }
+        const resultNumberParams = checkNaN({ rentalId });
 
         const result = await prisma.$transaction(async (tx) => {
             const existingRental = await tx.penyewaan.findUnique({
-                where: { penyewaan_id: penyewaanId }
+                where: { penyewaan_id: resultNumberParams.rentalId }
             });
 
             if (!existingRental) throw new errorAPI("Penyewaan tidak ditemukan", 404);
+            if (dayjs(dayjs(penyewaan_tglkembali).toISOString()).diff(dayjs(existingRental.penyewaan_tglsewa), "day") < 0) {
+                throw new errorAPI("Validation error", 400, { penyewaan_tglkembali: ["Tanggal kembali harus diatas tanggal sekarang"] });
+            }
 
             let totalHarga = 0;
 
             if (Array.isArray(daftar_alat) && daftar_alat.length > 0) {
                 const rentalDetails = await tx.penyewaan_detail.findMany({
-                    where: { penyewaan_detail_penyewaan_id: penyewaanId }
+                    where: { penyewaan_detail_penyewaan_id: resultNumberParams.rentalId }
                 });
 
-                rentalDetails.forEach(async (item) => {
-                    await tx.alat.update({
+                const updateQueries = rentalDetails.map((item) =>
+                    tx.alat.update({
                         where: { alat_id: item.penyewaan_detail_alat_id },
                         data: { alat_stok: { increment: item.penyewaan_detail_jumlah } }
-                    });
-                });
+                    })
+                );
+
+                await Promise.all(updateQueries);
 
                 await tx.penyewaan_detail.deleteMany({
-                    where: { penyewaan_detail_penyewaan_id: penyewaanId }
+                    where: { penyewaan_detail_penyewaan_id: resultNumberParams.rentalId }
                 });
 
                 const toolIds = daftar_alat.map((item) => Number(item.alat_id));
@@ -256,7 +270,29 @@ const update = async (req: Request, res: Response) => {
                     where: { alat_id: { in: toolIds } }
                 });
 
-                const diffInDays = dayjs(existingRental.penyewaan_tglkembali).diff(dayjs(existingRental.penyewaan_tglsewa), "day");
+                const toolStockMap = new Map(tools.map((tool) => [tool.alat_id, tool.alat_stok]));
+
+                const isStockEnough = daftar_alat.every((item) => {
+                    const availableStock = toolStockMap.get(item.alat_id) ?? 0;
+                    return item.jumlah <= availableStock;
+                });
+
+                if (!isStockEnough) {
+                    throw new errorAPI("Validation error", 400, {
+                        penyewaan_detail_alat_id: [`Beberapa alat tidak mencukupi stok`]
+                    });
+                }
+
+                const diffInDays = Math.ceil(
+                    Math.max(
+                        dayjs(dayjs(penyewaan_tglkembali).toISOString() || existingRental.penyewaan_tglkembali).diff(
+                            dayjs(existingRental.penyewaan_tglsewa),
+                            "day",
+                            true
+                        ),
+                        1
+                    )
+                );
 
                 const rentalDetail = await Promise.all(
                     daftar_alat.map(async (item) => {
@@ -274,7 +310,7 @@ const update = async (req: Request, res: Response) => {
                         }
 
                         return {
-                            penyewaan_detail_penyewaan_id: penyewaanId,
+                            penyewaan_detail_penyewaan_id: resultNumberParams.rentalId,
                             penyewaan_detail_alat_id: Number(item.alat_id),
                             penyewaan_detail_jumlah: Number(item.jumlah),
                             penyewaan_detail_subharga: subharga
@@ -284,11 +320,34 @@ const update = async (req: Request, res: Response) => {
 
                 await tx.penyewaan_detail.createMany({ data: rentalDetail });
             } else {
-                totalHarga = existingRental.penyewaan_totalharga;
+                if (penyewaan_tglkembali) {
+                    const diffInDaysNew = Math.ceil(
+                        Math.max(dayjs(dayjs(penyewaan_tglkembali).toISOString()).diff(dayjs(existingRental.penyewaan_tglsewa), "day", true), 1)
+                    );
+                    const diffInDaysOld = Math.ceil(
+                        Math.max(dayjs(existingRental.penyewaan_tglkembali).diff(dayjs(existingRental.penyewaan_tglsewa), "day", true), 1)
+                    );
+
+                    await tx.penyewaan_detail.updateMany({
+                        where: { penyewaan_detail_penyewaan_id: resultNumberParams.rentalId },
+                        data: { penyewaan_detail_subharga: { divide: diffInDaysOld } }
+                    });
+
+                    const rentalDetailsNew = await tx.penyewaan_detail.updateManyAndReturn({
+                        where: { penyewaan_detail_penyewaan_id: resultNumberParams.rentalId },
+                        data: { penyewaan_detail_subharga: { multiply: diffInDaysNew } }
+                    });
+
+                    rentalDetailsNew.forEach((item) => {
+                        totalHarga += item.penyewaan_detail_subharga;
+                    });
+                } else {
+                    totalHarga = existingRental.penyewaan_totalharga;
+                }
             }
 
             return await tx.penyewaan.update({
-                where: { penyewaan_id: penyewaanId },
+                where: { penyewaan_id: resultNumberParams.rentalId },
                 data: {
                     ...(penyewaan_tglkembali !== undefined && {
                         penyewaan_tglkembali: dayjs(penyewaan_tglkembali).toISOString()
@@ -301,7 +360,8 @@ const update = async (req: Request, res: Response) => {
                     pelanggan: {
                         select: {
                             pelanggan_id: true,
-                            pelanggan_nama: true
+                            pelanggan_nama: true,
+                            pelanggan_email: true
                         }
                     }
                 }
@@ -344,12 +404,14 @@ const destroy = async (req: Request, res: Response) => {
                 where: { penyewaan_detail_penyewaan_id: resultNumberParams.rentalId }
             });
 
-            rentalDetails.forEach(async (item) => {
-                await tx.alat.update({
+            const updateQueries = rentalDetails.map((item) =>
+                tx.alat.update({
                     where: { alat_id: item.penyewaan_detail_alat_id },
                     data: { alat_stok: { increment: item.penyewaan_detail_jumlah } }
-                });
-            });
+                })
+            );
+
+            await Promise.all(updateQueries);
 
             await tx.penyewaan_detail.deleteMany({
                 where: { penyewaan_detail_penyewaan_id: resultNumberParams.rentalId }
@@ -412,12 +474,14 @@ const clear = async (req: Request, res: Response) => {
                 include: { penyewaan_detail: true }
             });
 
-            clearRental.penyewaan_detail.forEach(async (item) => {
-                await tx.alat.update({
+            const updateQueries = clearRental.penyewaan_detail.map((item) =>
+                tx.alat.update({
                     where: { alat_id: item.penyewaan_detail_alat_id },
                     data: { alat_stok: { increment: item.penyewaan_detail_jumlah } }
-                });
-            });
+                })
+            );
+
+            await Promise.all(updateQueries);
         });
 
         return res.status(200).json({
